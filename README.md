@@ -1,2 +1,3 @@
-# Swift-StreamsBlendingRecommender
-Swift implementation of a Streams Blending Recommender (SBR).
+# StreamsBlendingRecommender
+
+A description of this package.
