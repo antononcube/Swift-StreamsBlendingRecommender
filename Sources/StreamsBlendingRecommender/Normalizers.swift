@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  Normalizers.swift
 //  
 //
 //  Created by Anton Antonov on 7/2/22.
@@ -11,11 +11,11 @@ import Foundation
 // Norm
 //========================================================
 
-public func norm(_ mix: [String : Double], _ spec: String = "euclidean") -> Double {
-    return norm( [Double]( mix.values ), spec)
+public func Norm(_ mix: [String : Double], _ spec: String = "euclidean") -> Double {
+    return Norm( [Double]( mix.values ), spec)
 }
 
-public func norm(_ vec: [Double], _ spec: String = "euclidean") -> Double {
+public func Norm(_ vec: [Double], _ spec: String = "euclidean") -> Double {
     
     switch spec {
 
@@ -49,11 +49,11 @@ public func norm(_ vec: [Double], _ spec: String = "euclidean") -> Double {
 //========================================================
 // Normalize
 //========================================================
-public func normalize(_ mix: [String : Double], _ spec: String = "euclidean") -> [String : Double] {
+public func Normalize(_ mix: [String : Double], _ spec: String = "euclidean") -> [String : Double] {
     if spec == "none" {
         return mix
     } else {
-        let n: Double = norm(mix, spec)
+        let n: Double = Norm(mix, spec)
         
         if n == 0 { return mix }
         
@@ -61,11 +61,11 @@ public func normalize(_ mix: [String : Double], _ spec: String = "euclidean") ->
     }
 }
 
-public func normalize(_ vec: [Double], _ spec: String = "euclidean") -> [Double] {
+public func Normalize(_ vec: [Double], _ spec: String = "euclidean") -> [Double] {
     if spec == "none" {
         return vec
     } else {
-        let n = norm(vec, spec)
+        let n = Norm(vec, spec)
         
         if n == 0 { return vec }
         

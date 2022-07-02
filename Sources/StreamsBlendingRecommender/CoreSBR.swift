@@ -1,3 +1,9 @@
+//
+//  CoreSBR.swift
+//
+//
+//  Created by Anton Antonov on 7/1/22.
+//
 public class CoreSBR {
     
     //========================================================
@@ -144,7 +150,7 @@ public class CoreSBR {
                                     nrecs: Int = 10,
                                     normalize: Bool = true,
                                     warn: Bool = true )
-    -> [String : Double] {
+    -> [Dictionary<String, Double>.Element] {
         let profd =  Dictionary(uniqueKeysWithValues: zip(prof, [Double](repeating: 1.0, count: prof.count)))
         return recommendByProfile(prof: profd, nrecs: nrecs, normalize: normalize, warn: warn)
     }
@@ -155,51 +161,54 @@ public class CoreSBR {
     ///    - nrecs: Number of recommendations.
     ///    - normalize: Should the recommendation scores be normalized or not?
     ///    - warn: Should warnings be issued or not?
-    public func recommendByProfile( prof: [String:Double],
+    public func recommendByProfile( prof: [String : Double],
                                     nrecs: Int = 10,
                                     normalize: Bool = true,
                                     warn: Bool = true )
-    -> [String : Double] {
+    -> [Dictionary<String, Double>.Element] {
         
         // Make sure tags are known
-        let profQuery = prof.filter({ self.knownTags.contains($0.key) })
+        let profQuery: [String : Double] = prof.filter({ self.knownTags.contains($0.key) })
 
         if profQuery.count == 0 && warn {
             print("None of the items is known in the recommender.")
-            return [String : Double]()
+            return []
         }
         
         if profQuery.count < 0 && warn {
             print("Some of the items are unknown in the recommender.")
         }
-        /*
+        
+        // Restrict to profile keys
         let keys2 = Set(profQuery.keys)
-        let dot12 = self.tagInverseIndexes.(filter { keys2.contains($0.key) }).merging(profQuery) { (v1, v2) in v1*v2 }
         
         // Get the tag inverse indexes and multiply their value by the corresponding item weight
-        let weightedTagIndexes: [String : [String : Double] ] = [String: [String : Double]]();
-        for k in keys2 { weightedTagIndexes[k] = self.tagInverseIndexes[k] }
+        var weightedTagIndexes: [String : [String : Double] ] = [String: [String : Double]]();
+        weightedTagIndexes = self.tagInverseIndexes.filter({ keys2.contains($0.key) })
         
         for k in keys2 {
-            weightedTagIndexes[k].mapValues{ $0 * profQuery[k] }
+            weightedTagIndexes[k] = (weightedTagIndexes[k]!).mapValues({ $0 * profQuery[k]! })
         }
         
         // Reduce the maps of maps into one map by adding the weights that correspond to the same keys
-        var profMix = [String : Double] ()
+        var itemMix: [String : Double] = [String : Double] ()
         
         for k in keys2 {
-            profMix.merge(weightedTagIndexes[k]) { (current, new) in current + new }
+            itemMix.merge(weightedTagIndexes[k]!) { (current, new) in current + new }
         }
         
         // Normalize
-        //if ( normalize ) { itemMix = this.normalize( itemMix, "max-norm") }
+        // I am not happy with the function having the name "Normalize"
+        // and the argument named "normalize". Using "normalizQ" (as I do, say, in R)
+        // does not seem consistent.
+        if normalize {
+            itemMix = Normalize(itemMix, "max-norm")
+        }
 
         // Convert to list of pairs and reverse sort
-        let res: [String : Double] = profMix.sorted(by: { e1, e2 in e1.value > e2.value })
-
+        let res = itemMix.sorted(by: { e1, e2 in e1.value > e2.value })
+        
         // Result
-        return nrecs >= res.count ? res : res
-        */
-        return ["a" : 32.3]
+        return res
     }
 }
