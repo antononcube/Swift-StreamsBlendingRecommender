@@ -19,11 +19,11 @@ public func Norm(_ vec: [Double], _ spec: String = "euclidean") -> Double {
     
     switch spec {
 
-    case "inf-norm":
+    case let x where Set(["max-norm", "inf-norm", "inf", "infinity"]).contains(x):
         
         return (vec.map { abs($0) }).max()!
 
-    case "one-norm":
+    case let x where Set(["one-norm", "one", "sum"]).contains(x):
         
         var sum: Double = 0.0
         for i in 0..<vec.count {
@@ -31,7 +31,7 @@ public func Norm(_ vec: [Double], _ spec: String = "euclidean") -> Double {
         }
         return sum
 
-    case "euclidean":
+    case let x where Set(["euclidean", "cosine", "two-norm", "two"]).contains(x):
         
         var sum : Double = 0.0
         for i in 0..<vec.count {
