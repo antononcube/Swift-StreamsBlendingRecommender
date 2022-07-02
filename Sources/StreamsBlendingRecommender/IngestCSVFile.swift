@@ -23,9 +23,9 @@ public func IngestCSVFile( fileName: String,
     
     
     do {
-        
+                
         let csvFile: CSV = try CSV(url: URL(fileURLWithPath: fileName),
-                                   delimiter: sep,
+                                   //delimiter: CSVDelimiter,
                                    loadColumns: false)
         
         let rowsOrig: [[String : String]] = csvFile.namedRows
