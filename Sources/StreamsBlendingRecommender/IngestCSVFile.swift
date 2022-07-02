@@ -15,33 +15,33 @@ import SwiftCSV
 ///   - mapper: Maps internal to actual column names.
 ///   - sep: Separator of CSV fields.
 public func IngestCSVFile( fileName: String,
-                    mapper :Dictionary<String, String> = ["Item" : "Item",
-                                                          "TagType" : "TagType",
-                                                          "Value" : "Value",
-                                                          "Weight" : "Weight"],
-                    sep: Character = ",") -> [[String : String]] {
+                           mapper :Dictionary<String, String> = ["Item" : "Item",
+                                                                 "TagType" : "TagType",
+                                                                 "Value" : "Value",
+                                                                 "Weight" : "Weight"],
+                           sep: Character = ",") -> [[String : String]] {
     
     
     do {
-                
-        let csvFile: CSV = try CSV(url: URL(fileURLWithPath: fileName),
-                                   delimiter: sep,
-                                   loadColumns: false)
         
-        let rowsOrig: [[String : String]] = csvFile.namedRows
-        
+        let csvFile: CSV = try CSV<Named>(url: URL(fileURLWithPath: fileName),
+                                          delimiter: CSVDelimiter.character(sep),
+                                          loadColumns: false)
+
+        let rowsOrig: [[String : String]] = csvFile.rows
+
         if mapper["Item"] == "Item" &&
             "TagType" == mapper["TagType"] &&
             "Value" == mapper["Value"] &&
             "Weight" == mapper["Weight"] {
             return rowsOrig
         }
-            
+        
         let rows: [[String : String]]  = rowsOrig.map( { ["Item" : $0[mapper["Item"]!]!,
                                                           "TagType" : $0[mapper["TagType"]!]!,
                                                           "Value" : $0[mapper["Value"]!]!,
                                                           "Weight" : $0[mapper["Weight"]!]!] })
-                
+        
         return rows
         
     } catch {
