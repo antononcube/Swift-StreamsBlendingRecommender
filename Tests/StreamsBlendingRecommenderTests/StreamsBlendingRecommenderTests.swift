@@ -11,7 +11,7 @@ final class StreamsBlendingRecommenderTests: XCTestCase {
         
         let fname: String = (urlSMRMatrixCSV?.absoluteString)!.replacingOccurrences(of: "file://", with: "");
         
-        let res: Bool = smr.ingestSMRMatrixCSVFile(fileName: fname)
+        let res: Bool = smr.ingestSMRMatrixCSVFile(fileName: fname, sep: ",")
 
         XCTAssertTrue(res)
         

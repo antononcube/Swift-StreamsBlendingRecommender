@@ -8,7 +8,7 @@
 import Foundation
 import SwiftCSV
 
-//=========A===============================================
+//========================================================
 /// Ingest CSV file.
 /// - Parameters:
 ///   - fileName: CSV file name.
@@ -25,7 +25,7 @@ public func IngestCSVFile( fileName: String,
     do {
                 
         let csvFile: CSV = try CSV(url: URL(fileURLWithPath: fileName),
-                                   //delimiter: CSVDelimiter,
+                                   delimiter: sep,
                                    loadColumns: false)
         
         let rowsOrig: [[String : String]] = csvFile.namedRows
