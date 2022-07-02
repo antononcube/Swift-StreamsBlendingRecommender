@@ -28,8 +28,20 @@ public func IngestCSVFile( fileName: String,
                                    delimiter: sep,
                                    loadColumns: false)
         
-        let rows = csvFile.namedRows
+        let rowsOrig: [[String : String]] = csvFile.namedRows
         
+        if mapper["Item"] == "Item" &&
+            "TagType" == mapper["TagType"] &&
+            "Value" == mapper["Value"] &&
+            "Weight" == mapper["Weight"] {
+            return rowsOrig
+        }
+            
+        let rows: [[String : String]]  = rowsOrig.map( { ["Item" : $0[mapper["Item"]!]!,
+                                                          "TagType" : $0[mapper["TagType"]!]!,
+                                                          "Value" : $0[mapper["Value"]!]!,
+                                                          "Weight" : $0[mapper["Weight"]!]!] })
+                
         return rows
         
     } catch {

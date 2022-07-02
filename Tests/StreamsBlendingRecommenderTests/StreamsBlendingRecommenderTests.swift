@@ -24,6 +24,8 @@ final class StreamsBlendingRecommenderTests: XCTestCase {
         
         XCTAssertTrue(Norm([1, 212, 21, 2, 5], "inf-norm") == 212 )
         
+        XCTAssertTrue(Norm([1, 212, 21, 2, 5], "max-norm") == 212 )
+
         XCTAssertTrue(Norm([1, 212, 21, 2, 5], "one-norm") == 241 )
 
         XCTAssertTrue(Norm(["a" : 1, "b" : 212, "c" : 21, "d" : 2, "e" : 5]) - 213.1079538637636 < 0.00001 )
