@@ -11,6 +11,11 @@ public class CoreSBR {
     var knownTags: Set<Character> = Set<Character>()
     var knownItems: Set<Character> = Set<Character>()
     
+    //========================================================
+    /// Initialization
+    public init() {
+        
+    }
     
     //========================================================
     // Setters ?

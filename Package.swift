@@ -19,11 +19,22 @@ let package = Package(
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
         // Targets can depend on other targets in this package, and on products in packages this package depends on.
+        //                .process("WLExampleData-aDescriptions.json"),
+        //                .process("WLExampleData-dfLSATopicWordMatrix.csv"),
+        //                .process("WLExampleData-dfLSAWordGlobalWeights.csv"),
+        //                .process("WLExampleData-dfSMRMatrix.csv"),
+        //                .process("WLExampleData-dfStemRules.csv")
         .target(
             name: "StreamsBlendingRecommender",
-            dependencies: ["SwiftCSV"]),
+            dependencies: ["SwiftCSV"],
+            resources: [
+                .process("Resources")
+            ]
+        ),
         .testTarget(
             name: "StreamsBlendingRecommenderTests",
-            dependencies: ["StreamsBlendingRecommender"]),
+            dependencies: ["StreamsBlendingRecommender"],
+            resources: [
+                .process("Resources")]),
     ]
 )
