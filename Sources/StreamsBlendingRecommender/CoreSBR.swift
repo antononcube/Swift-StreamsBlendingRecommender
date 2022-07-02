@@ -3,10 +3,10 @@ public class CoreSBR {
     //========================================================
     // Data members
     //========================================================
-    var SMRMatrix: [[String: String]] = []
-    var itemInverseIndexes: [String: [String : Double]] = [:]
-    var tagInverseIndexes: [String: [String : Double]] = [:]
-    var tagTypeToTags: [String: [String]] = [:]
+    var SMRMatrix: [[String: String]] = [[String: String]]()
+    var itemInverseIndexes: [String : [String : Double]] = [String : [String : Double]]()
+    var tagInverseIndexes: [String : [String : Double]] = [String : [String : Double]]()
+    var tagTypeToTags: [String : Set<String> ] = [String : Set<String> ]();
     var globalWeights: [String: Double] = [:]
     var knownTags: Set<String> = Set<String>()
     var knownItems: Set<String> = Set<String>()
@@ -65,40 +65,141 @@ public class CoreSBR {
     public func makeTagInverseIndexes() -> Bool {
         
         // Split into a hash by tag type.
-        var inverseIndexGroups = Dictionary(grouping: self.SMRMatrix, by: { r in r["TagType"]! })
+        let inverseIndexGroups = Dictionary(grouping: self.SMRMatrix, by: { r in r["TagType"]! })
 
         // For each tag type split into hash by Value.
-        var inverseIndexesPerTagType = inverseIndexGroups.mapValues { it0 in Dictionary(grouping: it0, by: { $0["Value"] }) }
+        var inverseIndexesPerTagType: Dictionary<String, Dictionary<String, Array<[String : String]>>>
+        inverseIndexesPerTagType = inverseIndexGroups.mapValues { it0 in Dictionary(grouping: it0, by: { $0["Value"]! }) }
 
         // Re-make each array of hashes into a hash.
         // println( inverseIndexesPerTagType.mapValues{ typeRec -> typeRec.value.mapValues{ it.value.size } } )
 
-        /*
-        var inverseIndexesPerTagType2 = inverseIndexesPerTagType.mapValues { typeRec in
+
+        var inverseIndexesPerTagType2: Dictionary<String, Dictionary<String, Dictionary<String, Double>>>
+        inverseIndexesPerTagType2 = inverseIndexesPerTagType.mapValues { typeRec in
             typeRec.mapValues { tagRec in
-                tagRec.value.associateBy(
-                    { $0["Item"] },
-                    { Double($0["Weight"]) })
+                tagRec.associateBy(
+                    { $0["Item"]! },
+                    { Double($0["Weight"]!)! })
             }
         }
 
         // Derive the tag type to tags hash map.
-        self.tagTypeToTags = inverseIndexesPerTagType2.mapValues { it in Set(it.value.keys) }
+        self.tagTypeToTags = inverseIndexesPerTagType2.mapValues { it in Set(it.keys) }
 
+        
         // Flatten the inverse index groups.
         self.tagInverseIndexes = [String: [String : Double]]();
-        for (k, v) in inverseIndexesPerTagType2 {
+        for (_, v) in inverseIndexesPerTagType2 {
             self.tagInverseIndexes.merge(v) { (_, new) in new }
         }
-
+        
         // Assign known tags.
         self.knownTags = Set(self.tagInverseIndexes.keys);
 
         // We make sure item inverse indexes are empty.
         self.itemInverseIndexes = [String: [String : Double]]();
-        */
         
         return false
     }
     
+    //========================================================
+    /**
+     * Transpose the tag inverse indexes into item inverse indexes.
+     * This operation corresponds to changing the representation of sparse matrix
+     * from column major to row major format.
+     */
+    public func transposeTagInverseIndexes() -> Bool {
+
+        // Transpose tag inverse indexes into item inverse indexes.
+
+        var items: Set<String> = Set<String>()
+        for (_, v) in tagInverseIndexes {
+            for (i, _) in v { items.insert(i) }
+        }
+        
+        self.itemInverseIndexes = [String: [String : Double]]();
+
+        for i in items { self.itemInverseIndexes[i] = [:] }
+        for (t, dt) in tagInverseIndexes {
+            for (i, w) in dt {
+                self.itemInverseIndexes[i]!.merge([t : w]) { (current, _) in current }
+            }
+        }
+
+        // Assign known items.
+        self.knownItems = Set(self.itemInverseIndexes.keys);
+
+        return true;
+    }
+    
+    //========================================================
+    /// Recommend items for a consumption profile (that is a list or a mix of tags.)
+    /// - Parameters:
+    ///    - prof: A list or a mix of tags.
+    ///    - nrecs: Number of recommendations.
+    ///    - normalize: Should the recommendation scores be normalized or not?
+    ///    - warn: Should warnings be issued or not?
+    public func recommendByProfile( prof: [String],
+                                    nrecs: Int = 10,
+                                    normalize: Bool = true,
+                                    warn: Bool = true )
+    -> [String : Double] {
+        let profd =  Dictionary(uniqueKeysWithValues: zip(prof, [Double](repeating: 1.0, count: prof.count)))
+        return recommendByProfile(prof: profd, nrecs: nrecs, normalize: normalize, warn: warn)
+    }
+     
+    /// Recommend items for a consumption profile (that is a list or a mix of tags.)
+    /// - Parameters:
+    ///    - prof: A list or a mix of tags.
+    ///    - nrecs: Number of recommendations.
+    ///    - normalize: Should the recommendation scores be normalized or not?
+    ///    - warn: Should warnings be issued or not?
+    public func recommendByProfile( prof: [String:Double],
+                                    nrecs: Int = 10,
+                                    normalize: Bool = true,
+                                    warn: Bool = true )
+    -> [String : Double] {
+        
+        // Make sure tags are known
+        let profQuery = prof.filter({ self.knownTags.contains($0.key) })
+
+        if profQuery.count == 0 && warn {
+            print("None of the items is known in the recommender.")
+            return [String : Double]()
+        }
+        
+        if profQuery.count < 0 && warn {
+            print("Some of the items are unknown in the recommender.")
+        }
+        /*
+        let keys2 = Set(profQuery.keys)
+        let dot12 = self.tagInverseIndexes.(filter { keys2.contains($0.key) }).merging(profQuery) { (v1, v2) in v1*v2 }
+        
+        // Get the tag inverse indexes and multiply their value by the corresponding item weight
+        let weightedTagIndexes: [String : [String : Double] ] = [String: [String : Double]]();
+        for k in keys2 { weightedTagIndexes[k] = self.tagInverseIndexes[k] }
+        
+        for k in keys2 {
+            weightedTagIndexes[k].mapValues{ $0 * profQuery[k] }
+        }
+        
+        // Reduce the maps of maps into one map by adding the weights that correspond to the same keys
+        var profMix = [String : Double] ()
+        
+        for k in keys2 {
+            profMix.merge(weightedTagIndexes[k]) { (current, new) in current + new }
+        }
+        
+        // Normalize
+        //if ( normalize ) { itemMix = this.normalize( itemMix, "max-norm") }
+
+        // Convert to list of pairs and reverse sort
+        let res: [String : Double] = profMix.sorted(by: { e1, e2 in e1.value > e2.value })
+
+        // Result
+        return nrecs >= res.count ? res : res
+        */
+        return ["a" : 32.3]
+    }
 }
