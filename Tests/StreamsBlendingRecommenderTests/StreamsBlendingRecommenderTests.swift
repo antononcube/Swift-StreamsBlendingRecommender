@@ -4,10 +4,6 @@ import XCTest
 
 final class StreamsBlendingRecommenderTests: XCTestCase {
     func testCSVIngestion() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        // XCTAssertEqual(StreamsBlendingRecommender().text, "Hello, World!")
         
         let urlSMRMatrixCSV = Bundle.module.url(forResource: "WLExampleData-dfSMRMatrix", withExtension: "csv")
         
@@ -42,6 +38,8 @@ final class StreamsBlendingRecommenderTests: XCTestCase {
         
         XCTAssertTrue(abs(Normalize([1, 212, 21, 2, 5], "inf-norm").max()! - 1.0) < 10e-10 )
 
+        // vec = {1, 212, 21, 2, 5};
+        // N[vec/Norm[vec, 2]] // Total // FullForm
         let r: [String : Double] = ["a" : 1.0, "b" : 212.0, "c" : 21, "d" : 2, "e" : 5.0]
         XCTAssertTrue( abs(Normalize(r, "euclidean").values.reduce(0, +) - 1.1308822389335467) < 1e-10)
         XCTAssertTrue( abs(Normalize(Array(r.values), "euclidean").reduce(0, +) - 1.1308822389335467) < 1e-10)

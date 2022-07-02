@@ -209,6 +209,6 @@ public class CoreSBR {
         let res = itemMix.sorted(by: { e1, e2 in e1.value > e2.value })
         
         // Result
-        return res
+        return (nrecs >= res.count) ? res : Array(res[0..<nrecs])
     }
 }
