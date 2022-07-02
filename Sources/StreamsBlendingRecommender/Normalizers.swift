@@ -41,7 +41,7 @@ public func Norm(_ vec: [Double], _ spec: String = "euclidean") -> Double {
         
     default:
         
-        print("Unknown norm specification '$spec'.")
+        print("Unknown norm specification \(spec).")
         return 0
     }
 }
