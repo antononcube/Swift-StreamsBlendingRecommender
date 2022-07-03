@@ -65,7 +65,7 @@ final class StreamsBlendingRecommenderTests: XCTestCase {
         let lsRecs: [Dictionary<String, Double>.Element] = sbr.recommendByProfile(prof: prof, nrecs: 10, normalize: true)
         // print(lsRecs)
         
-        let aRecs: [String : Double] = Dictionary(uniqueKeysWithValues: lsRecs.map { ($0.key, $0.value) })
+        let aRecs: [String : Double] = Dictionary(uniqueKeysWithValues: lsRecs)
         // print(aRecs)
         
         XCTAssertTrue( aRecs["Statistics-AirlinePassengerMiles"] != nil )

@@ -19,6 +19,7 @@ public class CoreSBR {
     
     //========================================================
     /// Initialization
+    //========================================================
     public init() {
         
     }
@@ -27,6 +28,8 @@ public class CoreSBR {
     // Setters ?
     //========================================================
     
+    //========================================================
+    // Ingest from CSV file
     //========================================================
     /// Ingest SMR matrix CSV file.
     /// - Parameters:
@@ -66,6 +69,8 @@ public class CoreSBR {
         return true;
     }
     
+    //========================================================
+    // Make tag inverse indexes
     //========================================================
     /// Make the inverse indexes that correspond to the SMR matrix.
     public func makeTagInverseIndexes() -> Bool {
@@ -110,6 +115,8 @@ public class CoreSBR {
     }
     
     //========================================================
+    // Transpose tag inverse indexes
+    //========================================================
     /**
      * Transpose the tag inverse indexes into item inverse indexes.
      * This operation corresponds to changing the representation of sparse matrix
@@ -138,7 +145,123 @@ public class CoreSBR {
 
         return true;
     }
+
+    //========================================================
+    // Profile
+    //========================================================
+    /// Recommend items for a consumption profile (that is a list or a mix of tags.)
+    /// - Parameters:
+    ///    - items: A  list of items or an item-to-weight dictionary.
+    ///    - normalize: Should the recommendation scores be normalized or not?
+    ///    - warn: Should warnings be issued or not?
+    public func profile( items: [String],
+                         normalize: Bool = true,
+                         warn: Bool = true )
+    -> [Dictionary<String, Double>.Element] {
+        let itemsd = Dictionary(uniqueKeysWithValues: zip(items, [Double](repeating: 1.0, count: items.count)))
+        return profile(items: itemsd, normalize: normalize, warn: warn)
+    }
     
+    /// Recommend items for a consumption profile (that is a list or a mix of tags.)
+    /// - Parameters:
+    ///    - items: A  list of items or an item-to-weight dictionary.
+    ///    - normalize: Should the recommendation scores be normalized or not?
+    ///    - warn: Should warnings be issued or not?
+    public func profile( items: [String : Double],
+                         normalize: Bool = true,
+                         warn: Bool = true )
+    -> [Dictionary<String, Double>.Element] {
+        
+        // Transpose inverse indexes if needed
+        if self.itemInverseIndexes.isEmpty {
+            let res = self.transposeTagInverseIndexes()
+            if !res {
+                print("Cannot transpose tag inverse indexes.")
+                return []
+            }
+        }
+        
+        // Except the line above the code of this method is same/dual to .recommendByProfile
+        
+        // Make sure items are known
+        let itemsQuery: [String : Double] = items.filter({ self.knownItems.contains($0.key) })
+
+        if itemsQuery.count == 0 && warn {
+            print("None of the items is known in the recommender.")
+            return []
+        }
+        
+        if itemsQuery.count < 0 && warn {
+            print("Some of the items are unknown in the recommender.")
+        }
+        
+        // Restrict to items keys
+        let keys2 = Set(itemsQuery.keys)
+        
+        // Get the item inverse indexes and multiply their value by the corresponding item weight
+        var weightedItemIndexes: [String : [String : Double] ] = [String: [String : Double]]();
+                
+        for k in keys2 {
+            weightedItemIndexes[k] = (self.itemInverseIndexes[k]!).mapValues({ $0 * itemsQuery[k]! })
+        }
+        
+        // Reduce the maps of maps into one map by adding the weights that correspond to the same keys
+        var tagMix: [String : Double] = [String : Double] ()
+        
+        for k in keys2 {
+            tagMix.merge(weightedItemIndexes[k]!) { (current, new) in current + new }
+        }
+        
+        // Normalize
+        // I am not happy with the function having the name "Normalize"
+        // and the argument named "normalize". Using "normalizQ" (as I do, say, in R)
+        // does not seem consistent.
+        if normalize {
+            tagMix = Normalize(tagMix, "max-norm")
+        }
+
+        // Convert to list of pairs and reverse sort
+        let res = tagMix.sorted(by: { e1, e2 in e1.value > e2.value })
+        
+        // Result
+        return res
+    }
+    
+    //========================================================
+    // Recommend by history
+    //========================================================
+    /// Recommend items for a consumption history.
+    ///  - Parameters:
+    ///    - items: A  list of items or an item-to-weight dictionary.
+    ///    - nrecs: Number of recommendations.
+    ///    - normalize: Should the recommendation scores be normalized or not?
+    ///    - warn: Should warnings be issued or not?
+    public func recommend( items: [String],
+                           nrecs: Int = 10,
+                           normalize: Bool = true,
+                           warn: Bool = true )
+    -> [Dictionary<String, Double>.Element] {
+        let itemsd =  Dictionary(uniqueKeysWithValues: zip(items, [Double](repeating: 1.0, count: items.count)))
+        return recommend(items: itemsd, nrecs: nrecs, normalize: normalize, warn: warn)
+    }
+    
+    
+    public func recommend( items: [String : Double],
+                           nrecs: Int = 10,
+                           normalize: Bool = true,
+                           warn: Bool = true )
+    -> [Dictionary<String, Double>.Element] {
+        
+        let res = profile(items: items, normalize: normalize, warn: warn)
+        
+        return recommendByProfile(prof: Dictionary(uniqueKeysWithValues: res),
+                                  nrecs: nrecs,
+                                  normalize: normalize,
+                                  warn: warn)
+    }
+    
+    //========================================================
+    // Recommend by profile
     //========================================================
     /// Recommend items for a consumption profile (that is a list or a mix of tags.)
     /// - Parameters:
@@ -171,12 +294,12 @@ public class CoreSBR {
         let profQuery: [String : Double] = prof.filter({ self.knownTags.contains($0.key) })
 
         if profQuery.count == 0 && warn {
-            print("None of the items is known in the recommender.")
+            print("None of the tags is known in the recommender.")
             return []
         }
         
         if profQuery.count < 0 && warn {
-            print("Some of the items are unknown in the recommender.")
+            print("Some of the tags are unknown in the recommender.")
         }
         
         // Restrict to profile keys
@@ -184,11 +307,6 @@ public class CoreSBR {
         
         // Get the tag inverse indexes and multiply their value by the corresponding item weight
         var weightedTagIndexes: [String : [String : Double] ] = [String: [String : Double]]();
-//        weightedTagIndexes = self.tagInverseIndexes.filter({ keys2.contains($0.key) })
-//
-//        for k in keys2 {
-//            weightedTagIndexes[k] = (weightedTagIndexes[k]!).mapValues({ $0 * profQuery[k]! })
-//        }
                 
         for k in keys2 {
             weightedTagIndexes[k] = (self.tagInverseIndexes[k]!).mapValues({ $0 * profQuery[k]! })
