@@ -7,15 +7,15 @@ final class StreamsBlendingRecommenderTests: XCTestCase {
         
         let urlSMRMatrixCSV = Bundle.module.url(forResource: "WLExampleData-dfSMRMatrix", withExtension: "csv")
         
-        let smr: CoreSBR = CoreSBR()
+        let sbr: CoreSBR = CoreSBR()
         
         let fname: String = (urlSMRMatrixCSV?.absoluteString)!.replacingOccurrences(of: "file://", with: "");
         
-        let res: Bool = smr.ingestSMRMatrixCSVFile(fileName: fname, sep: ",")
+        let res: Bool = sbr.ingestSMRMatrixCSVFile(fileName: fname, sep: ",")
 
         XCTAssertTrue(res)
         
-        XCTAssertTrue(smr.SMRMatrix.count > 3000)
+        XCTAssertTrue(sbr.SMRMatrix.count > 3000)
     }
     
     func testNorms() throws {
@@ -46,5 +46,33 @@ final class StreamsBlendingRecommenderTests: XCTestCase {
         XCTAssertTrue( abs(Normalize(r, "euclidean").values.reduce(0, +) - 1.1308822389335467) < 1e-10)
         XCTAssertTrue( abs(Normalize(Array(r.values), "euclidean").reduce(0, +) - 1.1308822389335467) < 1e-10)
         
+    }
+    
+    func testRecommendByProfile() throws {
+        
+        let urlSMRMatrixCSV = Bundle.module.url(forResource: "WLExampleData-dfSMRMatrix", withExtension: "csv")
+        
+        let sbr: CoreSBR = CoreSBR()
+        
+        let fname: String = (urlSMRMatrixCSV?.absoluteString)!.replacingOccurrences(of: "file://", with: "");
+        
+        _ = sbr.ingestSMRMatrixCSVFile(fileName: fname, sep: ",")
+
+        _ = sbr.makeTagInverseIndexes()
+
+        let prof = ["ApplicationArea:Aviation", "DataType:TimeSeries"]
+        
+        let lsRecs: [Dictionary<String, Double>.Element] = sbr.recommendByProfile(prof: prof, nrecs: 10, normalize: true)
+        // print(lsRecs)
+        
+        let aRecs: [String : Double] = Dictionary(uniqueKeysWithValues: lsRecs.map { ($0.key, $0.value) })
+        // print(aRecs)
+        
+        XCTAssertTrue( aRecs["Statistics-AirlinePassengerMiles"] != nil )
+        XCTAssertTrue( abs(aRecs["Statistics-AirlinePassengerMiles"]! - 1.00) < 1.0e-10 )
+        
+        XCTAssertTrue( aRecs["Statistics-InternationalAirlinePassengers"] != nil )
+        XCTAssertTrue( abs(aRecs["Statistics-InternationalAirlinePassengers"]! - 1.00) < 1.0e-10 )
+
     }
 }
