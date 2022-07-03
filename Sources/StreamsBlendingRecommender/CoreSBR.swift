@@ -184,10 +184,14 @@ public class CoreSBR {
         
         // Get the tag inverse indexes and multiply their value by the corresponding item weight
         var weightedTagIndexes: [String : [String : Double] ] = [String: [String : Double]]();
-        weightedTagIndexes = self.tagInverseIndexes.filter({ keys2.contains($0.key) })
-        
+//        weightedTagIndexes = self.tagInverseIndexes.filter({ keys2.contains($0.key) })
+//
+//        for k in keys2 {
+//            weightedTagIndexes[k] = (weightedTagIndexes[k]!).mapValues({ $0 * profQuery[k]! })
+//        }
+                
         for k in keys2 {
-            weightedTagIndexes[k] = (weightedTagIndexes[k]!).mapValues({ $0 * profQuery[k]! })
+            weightedTagIndexes[k] = (self.tagInverseIndexes[k]!).mapValues({ $0 * profQuery[k]! })
         }
         
         // Reduce the maps of maps into one map by adding the weights that correspond to the same keys
