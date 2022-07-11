@@ -145,7 +145,50 @@ public class CoreSBR {
 
         return true;
     }
-
+    
+    //========================================================
+    // Make from dataset
+    //========================================================
+    /// Make tag inverse indexes from wide form dataset.
+    /// - Parameters:
+    ///   - data: A list of hashes.
+    ///   - tagTypes: Tag types to use -- columns of the dataset. If empty the complement of itemColumnName is used.
+    ///   - itemColumnName: Which column is the identifier column.
+    ///   - addTagTypesToColumnNames: Should the tag types be prefixes of the tags or not?
+    ///   - sep: Separator between the tag type prefixes and the tags.
+    func makeTagInverseIndexesFromWideForm(data: [[String:String]],
+                       tagTypes: [String],
+                       itemColumnName: String,
+                       addTagTypesToColumnNames: Bool = false,
+                       sep: String = ":") {
+        
+//        var tagTypesLocal = tagTypes
+//
+//        if tagTypesLocal.isEmpty {
+//            tagTypesLocal = data.columns.map { $0.name }
+//            tagTypesLocal = tagTypesLocal.filter({ $0 != itemColumnName })
+//        }
+//
+//        // Hash of mixes
+//        var matrices: [String : [[String : Double]]];
+//        for tagType in tagTypesLocal {
+//
+//            //Cross-tabulate tag-vs-item
+//            var res = crossTabulate(data, tagType, itemColumnName)
+//
+//            //If specified add the tag type to the tag-keys.
+//            if addTagTypesToColumnNames {
+//                //TBD...
+//            }
+//
+//            //Assign
+//            matrices[tagType] = res
+//        }
+//
+//        //Finish the tag inverse index making.
+//        return makeTagInverseIndexes(matrices)
+    }
+    
     //========================================================
     // Profile
     //========================================================
@@ -329,8 +372,67 @@ public class CoreSBR {
 
         // Convert to list of pairs and reverse sort
         let res = itemMix.sorted(by: { e1, e2 in e1.value > e2.value })
-        
+
         // Result
         return (nrecs >= res.count) ? res : Array(res[0..<nrecs])
     }
+    
+    //========================================================
+    // Filter by profile
+    //========================================================
+    /// Filter items by profile
+    /// - Parameters:
+    ///   - prof: A profile specification used to filter with.
+    ///   - type: The type of filtering one of "union" or "intersection".
+    ///   - warn: Should warnings be issued or not?
+    public func filterByProfile( prof : [String],
+                                 type : String = "intersection",
+                                 warn : Bool = true) -> [String] {
+        
+        var profMix : Set<String>
+        let profSet = Set(prof)
+        
+        if type.lowercased() == "intersection" {
+            
+            let tagItemSets = self.tagInverseIndexes.filter({ profSet.contains($0.key) }).map({ Set($0.value.keys) })
+
+            profMix = tagItemSets.suffix(from:1).reduce(tagItemSets[0], { x, y in x.intersection(y) })
+                
+        } else if type.lowercased() == "union" {
+            
+            let tagItemSets = self.tagInverseIndexes.filter({ profSet.contains($0.key) }).map({ Set($0.value.keys) })
+            
+            profMix = tagItemSets.reduce(Set<String>(), { x, y in x.union(y) })
+        
+        } else {
+            if warn {
+                print("The value of the type argument is expected to be one of \"intersection\" or \"union\".")
+            }
+            return []
+        }
+        
+        return Array(profMix)
+    }
+    
+    
+    //========================================================
+    // Retrieve by query elements
+    //========================================================
+    /// Retrieve by query elements.
+    /// - Parameters:
+    ///   - should: A profile specification used to recommend with.
+    ///   - must: A profile specification used to filter with. The items in the result must have the tags in the must argument.
+    ///   - mustNot: A profile specification used to filter with. The items in the result must not have the tags in the must not argument.
+    ///   - mustType: The type of filtering with the must tags; one of "union" or "intersection".
+    ///   - mustNotType: The type of filtering with the must not tags; one of "union" or "intersection".
+    ///   - warn: Should warnings be issued or not?
+//    public func retrieveByQueryElements( should : [String : Double],
+//                                         must : [String : Double],
+//                                         mustNot : [String : Double],
+//                                         mustType : String,
+//                                         mustNotType : String,
+//                                         warn: Bool = true) {
+//
+//    }
+    
 }

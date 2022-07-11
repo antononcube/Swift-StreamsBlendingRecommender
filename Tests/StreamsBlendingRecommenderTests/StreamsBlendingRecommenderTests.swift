@@ -3,6 +3,22 @@ import XCTest
 //@testable import CoreSBR
 
 final class StreamsBlendingRecommenderTests: XCTestCase {
+    
+    private var sbrWLExampleData : CoreSBR!
+    
+    override func setUp() {
+        
+        let urlSMRMatrixCSV = Bundle.module.url(forResource: "WLExampleData-dfSMRMatrix", withExtension: "csv")
+        
+        self.sbrWLExampleData = CoreSBR()
+        
+        let fname: String = (urlSMRMatrixCSV?.absoluteString)!.replacingOccurrences(of: "file://", with: "");
+        
+        _ = self.sbrWLExampleData.ingestSMRMatrixCSVFile(fileName: fname, sep: ",")
+        
+        _ = self.sbrWLExampleData.makeTagInverseIndexes()
+    }
+    
     func testCSVIngestion() throws {
         
         let urlSMRMatrixCSV = Bundle.module.url(forResource: "WLExampleData-dfSMRMatrix", withExtension: "csv")
@@ -12,7 +28,7 @@ final class StreamsBlendingRecommenderTests: XCTestCase {
         let fname: String = (urlSMRMatrixCSV?.absoluteString)!.replacingOccurrences(of: "file://", with: "");
         
         let res: Bool = sbr.ingestSMRMatrixCSVFile(fileName: fname, sep: ",")
-
+        
         XCTAssertTrue(res)
         
         XCTAssertTrue(sbr.SMRMatrix.count > 3000)
@@ -25,21 +41,21 @@ final class StreamsBlendingRecommenderTests: XCTestCase {
         XCTAssertTrue(Norm([1, 212, 21, 2, 5], "inf-norm") == 212 )
         
         XCTAssertTrue(Norm([1, 212, 21, 2, 5], "max-norm") == 212 )
-
+        
         XCTAssertTrue(Norm([1, 212, 21, 2, 5], "one-norm") == 241 )
-
+        
         XCTAssertTrue(Norm(["a" : 1, "b" : 212, "c" : 21, "d" : 2, "e" : 5]) - 213.1079538637636 < 0.00001 )
-
+        
         XCTAssertTrue(Norm(["a" : 1, "b" : 212, "c" : 21, "d" : 2, "e" : 5], "inf-norm") == 212 )
-
+        
         XCTAssertTrue(Norm(["a" : 1, "b" : 212, "c" : 21, "d" : 2, "e" : 5], "one-norm") == 241 )
-
+        
     }
     
     func testNormalizing() throws {
         
         XCTAssertTrue(abs(Normalize([1, 212, 21, 2, 5], "inf-norm").max()! - 1.0) < 10e-10 )
-
+        
         // vec = {1, 212, 21, 2, 5};
         // N[vec/Norm[vec, 2]] // Total // FullForm
         let r: [String : Double] = ["a" : 1.0, "b" : 212.0, "c" : 21, "d" : 2, "e" : 5.0]
@@ -57,9 +73,9 @@ final class StreamsBlendingRecommenderTests: XCTestCase {
         let fname: String = (urlSMRMatrixCSV?.absoluteString)!.replacingOccurrences(of: "file://", with: "");
         
         _ = sbr.ingestSMRMatrixCSVFile(fileName: fname, sep: ",")
-
+        
         _ = sbr.makeTagInverseIndexes()
-
+        
         let prof = ["ApplicationArea:Aviation", "DataType:TimeSeries"]
         
         let lsRecs: [Dictionary<String, Double>.Element] = sbr.recommendByProfile(prof: prof, nrecs: 10, normalize: true)
@@ -73,6 +89,13 @@ final class StreamsBlendingRecommenderTests: XCTestCase {
         
         XCTAssertTrue( aRecs["Statistics-InternationalAirlinePassengers"] != nil )
         XCTAssertTrue( abs(aRecs["Statistics-InternationalAirlinePassengers"]! - 1.00) < 1.0e-10 )
+        
+    }
+    
+    func testFilterByProfile() throws {
+        
+        let res = sbrWLExampleData.filterByProfile(prof: ["Word:time", "Word:kidney"])
 
+        XCTAssertTrue( Set(["Statistics-KidneyInfection", "Statistics-KidneyTransplant"]).intersection(res).count == 2)
     }
 }
