@@ -429,8 +429,8 @@ public class CoreSBR {
     public func retrieveByQueryElements( should : [String],
                                          must : [String],
                                          mustNot : [String],
-                                         mustType : String,
-                                         mustNotType : String,
+                                         mustType : String = "intersection",
+                                         mustNotType : String = "union",
                                          warn: Bool = true) -> [Dictionary<String, Double>.Element] {
     
         if should.count + must.count + mustNot.count == 0 {
@@ -441,7 +441,7 @@ public class CoreSBR {
         //-------------------------------------------------
         // Should
         //-------------------------------------------------
-        var shouldItems: Set<String> = Set<String>()
+        var shouldItems: Set<String> = []
         var profRecs : Dictionary<String, Double> = [:]
         if should.count > 0 || must.count > 0 {
             profRecs = Dictionary(uniqueKeysWithValues: recommendByProfile(prof: should + must, warn: warn))
@@ -453,29 +453,29 @@ public class CoreSBR {
         //-------------------------------------------------
         // Must
         //-------------------------------------------------
-        var mustItems: Set<String> = Set<String>()
+        var mustItems: Set<String> = []
         if must.count > 0 {
-            mustItems = Set(filterByProfile(prof: must, warn: warn))
+            mustItems = Set(filterByProfile(prof: must, type: mustType, warn: warn))
         } else {
             mustItems = self.knownItems
         }
-        
+
         if mustItems.count > 0 {
-            res = res.union(mustItems)
+            res = res.intersection(mustItems)
         }
-        
+
         //-------------------------------------------------
         // Must Not
         //-------------------------------------------------
-        var mustNotItems: Set<String> = Set<String>()
+        var mustNotItems: Set<String> = []
         if mustNot.count > 0 {
-            mustNotItems = Set(filterByProfile(prof: mustNot, warn: warn))
+            mustNotItems = Set(filterByProfile(prof: mustNot, type: mustNotType, warn: warn))
         }
         
         if mustNotItems.count > 0 {
-            res = res.subtract(mustNotItems)
+            res.subtract(mustNotItems)
         }
-        
+
         // Result
         return Array(profRecs.filter({ res.contains($0.key) }))
 
