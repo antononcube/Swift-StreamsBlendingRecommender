@@ -477,8 +477,7 @@ public class CoreSBR {
         }
 
         // Result
-        return Array(profRecs.filter({ res.contains($0.key) }))
-
+        return Array(profRecs.filter({ res.contains($0.key) })).sorted(by: { e1, e2 in e1.value > e2.value })
     }
     
 }
