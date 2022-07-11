@@ -426,13 +426,59 @@ public class CoreSBR {
     ///   - mustType: The type of filtering with the must tags; one of "union" or "intersection".
     ///   - mustNotType: The type of filtering with the must not tags; one of "union" or "intersection".
     ///   - warn: Should warnings be issued or not?
-//    public func retrieveByQueryElements( should : [String : Double],
-//                                         must : [String : Double],
-//                                         mustNot : [String : Double],
-//                                         mustType : String,
-//                                         mustNotType : String,
-//                                         warn: Bool = true) {
-//
-//    }
+    public func retrieveByQueryElements( should : [String],
+                                         must : [String],
+                                         mustNot : [String],
+                                         mustType : String,
+                                         mustNotType : String,
+                                         warn: Bool = true) -> [Dictionary<String, Double>.Element] {
+    
+        if should.count + must.count + mustNot.count == 0 {
+            if warn { print("All query specifications are empty.") }
+            return [Dictionary<String, Double>.Element]()
+        }
+        
+        //-------------------------------------------------
+        // Should
+        //-------------------------------------------------
+        var shouldItems: Set<String> = Set<String>()
+        var profRecs : Dictionary<String, Double> = [:]
+        if should.count > 0 || must.count > 0 {
+            profRecs = Dictionary(uniqueKeysWithValues: recommendByProfile(prof: should + must, warn: warn))
+            shouldItems = Set(profRecs.keys)
+        }
+
+        var res: Set<String> = shouldItems
+        
+        //-------------------------------------------------
+        // Must
+        //-------------------------------------------------
+        var mustItems: Set<String> = Set<String>()
+        if must.count > 0 {
+            mustItems = Set(filterByProfile(prof: must, warn: warn))
+        } else {
+            mustItems = self.knownItems
+        }
+        
+        if mustItems.count > 0 {
+            res = res.union(mustItems)
+        }
+        
+        //-------------------------------------------------
+        // Must Not
+        //-------------------------------------------------
+        var mustNotItems: Set<String> = Set<String>()
+        if mustNot.count > 0 {
+            mustNotItems = Set(filterByProfile(prof: mustNot, warn: warn))
+        }
+        
+        if mustNotItems.count > 0 {
+            res = res.subtract(mustNotItems)
+        }
+        
+        // Result
+        return Array(profRecs.filter({ res.contains($0.key) }))
+
+    }
     
 }
