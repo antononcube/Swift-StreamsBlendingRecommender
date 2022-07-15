@@ -30,17 +30,43 @@ public func IngestCSVFile( fileName: String,
 
         let rowsOrig: [[String : String]] = csvFile.rows
 
-        if mapper["Item"] == "Item" &&
-            "TagType" == mapper["TagType"] &&
-            "Value" == mapper["Value"] &&
-            "Weight" == mapper["Weight"] {
+        
+        //Check that the file had expected column names
+        if Set(mapper.keys).intersection(rowsOrig[0].keys).count < mapper.count {
+            print("The ingested CSV file does not have the expected column names: \(mapper.keys).")
+            return []
+        }
+        
+        //Invert mapper
+        var mapperInv: [String : String] = [:]
+        
+        for pair in mapper {
+            mapperInv[pair.value] = pair.key
+        }
+
+        //Check "sameness"
+        if mapper.map({ $0 == $1 }).reduce(true, { $0 && $1 }) {
             return rowsOrig
         }
         
-        let rows: [[String : String]]  = rowsOrig.map( { ["Item" : $0[mapper["Item"]!]!,
-                                                          "TagType" : $0[mapper["TagType"]!]!,
-                                                          "Value" : $0[mapper["Value"]!]!,
-                                                          "Weight" : $0[mapper["Weight"]!]!] })
+        //Re-map keys
+        //This seems very long code for a simple operation.
+        //Hopefully it is fast enough.
+        let rows: [[String : String]] =
+        rowsOrig.map( { rec in
+            
+            var rec2 : [String : String] = [:]
+            
+            for (k, v) in rec2 {
+                if mapperInv[k] != nil {
+                    rec2[mapperInv[k]!] = v
+                } else {
+                    rec2[k] = v
+                }
+            }
+            
+            return rec2
+        })
         
         return rows
         
