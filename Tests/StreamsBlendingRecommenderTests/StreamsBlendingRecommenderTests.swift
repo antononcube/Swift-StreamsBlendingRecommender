@@ -99,10 +99,11 @@ final class StreamsBlendingRecommenderTests: XCTestCase {
         XCTAssertTrue( Set(["Statistics-KidneyInfection", "Statistics-KidneyTransplant"]).intersection(res).count == 2)
     }
     
-    func testRetrieveByQyueryElements() throws {
+    func testRetrieveByQueryElements() throws {
         
         let res = sbrWLExampleData.retrieveByQueryElements(should: ["Word:time"], must: ["Word:kidney"], mustNot: ["Word:transplant"])
         XCTAssertTrue( res.count == 1 )
         XCTAssertTrue( Set(["Statistics-KidneyInfection", "Statistics-KidneyTransplant"]).intersection(Dictionary(uniqueKeysWithValues: res).keys).count == 1)
     }
+    
 }
