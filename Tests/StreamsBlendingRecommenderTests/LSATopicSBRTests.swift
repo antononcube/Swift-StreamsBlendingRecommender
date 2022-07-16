@@ -66,7 +66,7 @@ final class LSATopicSBRTests: XCTestCase {
         XCTAssertTrue(sbrWLExampleDataTopics.stemRules.count > 1000)
     }
     
-    func test_represent_by_topics() throws {
+    func test_represent_by_terms() throws {
 
         let query = "airline time series"
         
@@ -74,5 +74,23 @@ final class LSATopicSBRTests: XCTestCase {
 
         XCTAssertTrue(qbag.count >= 3)
     }
-    
+
+    func test_represent_by_topics() throws {
+
+        let query = "airline time series"
+        
+        let qbag = sbrWLExampleDataTopics.representByTopics(query)
+
+        XCTAssertTrue(qbag.count >= 3)
+    }
+
+    func test_recommend_by_topics() throws {
+
+        let query = "titanic survival data records"
+        
+        let qbag = sbrWLExampleDataTopics.recommendByText(query, 10)
+
+        XCTAssertTrue(qbag.count >= 3)
+    }
+
 }
