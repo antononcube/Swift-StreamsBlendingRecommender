@@ -4,7 +4,7 @@
 //
 //  Created by Anton Antonov on 7/1/22.
 //
-public class CoreSBR {
+public class CoreSBR: AbstractSBR {
     
     //========================================================
     // Data members
@@ -285,16 +285,18 @@ public class CoreSBR {
     /// - Returns: An array of dictionary elements (items) sorted in descending order.
     public func recommend( items: [String],
                            nrecs: Int = 10,
+                           normSpec: String = "max-norm",
                            normalize: Bool = true,
                            warn: Bool = true )
     -> [Dictionary<String, Double>.Element] {
         let itemsd =  Dictionary(uniqueKeysWithValues: zip(items, [Double](repeating: 1.0, count: items.count)))
-        return recommend(items: itemsd, nrecs: nrecs, normalize: normalize, warn: warn)
+        return recommend(items: itemsd, nrecs: nrecs, normSpec: normSpec, normalize: normalize, warn: warn)
     }
     
     
     public func recommend( items: [String : Double],
                            nrecs: Int = 10,
+                           normSpec: String = "max-norm",
                            normalize: Bool = true,
                            warn: Bool = true )
     -> [Dictionary<String, Double>.Element] {
@@ -318,11 +320,12 @@ public class CoreSBR {
     ///    - warn: Should warnings be issued or not?
     public func recommendByProfile(prof: [String],
                                    nrecs: Int = 10,
+                                   normSpec: String = "max-norm",
                                    normalize: Bool = true,
                                    warn: Bool = true )
     -> [Dictionary<String, Double>.Element] {
         let profd =  Dictionary(uniqueKeysWithValues: zip(prof, [Double](repeating: 1.0, count: prof.count)))
-        return recommendByProfile(prof: profd, nrecs: nrecs, normalize: normalize, warn: warn)
+        return recommendByProfile(prof: profd, nrecs: nrecs, normSpec: normSpec, normalize: normalize, warn: warn)
     }
      
     /// Recommend items for a consumption profile (that is a list or a mix of tags.)
@@ -334,6 +337,7 @@ public class CoreSBR {
     /// - Returns: An array of dictionary elements (items) sorted in descending order.
     public func recommendByProfile( prof: [String : Double],
                                     nrecs: Int = 10,
+                                    normSpec: String = "max-norm",
                                     normalize: Bool = true,
                                     warn: Bool = true )
     -> [Dictionary<String, Double>.Element] {
@@ -372,7 +376,7 @@ public class CoreSBR {
         // and the argument named "normalize". Using "normalizQ" (as I do, say, in R)
         // does not seem consistent.
         if normalize {
-            itemMix = Normalize(itemMix, "max-norm")
+            itemMix = Normalize(itemMix, normSpec)
         }
 
         // Convert to list of pairs and reverse sort

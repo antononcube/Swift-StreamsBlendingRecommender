@@ -9,6 +9,7 @@ import Foundation
 
 class CompositeSBR: AbstractSBR {
     
+    
     //========================================================
     // Attributes
     //========================================================
@@ -24,7 +25,7 @@ class CompositeSBR: AbstractSBR {
         // self.weights[k, default: 1.0]
         
         // Make sure all recommender objects have weights
-        for (k, v) in self.objects {
+        for (k, _) in self.objects {
             if self.weights[k] == nil { self.weights[k] = 1 }
         }
     }
@@ -76,16 +77,22 @@ class CompositeSBR: AbstractSBR {
     /// - Returns: An array of dictionary elements (items) sorted in descending order.
     public func recommend( items: [String],
                            nrecs: Int = 10,
+                           normSpec: String = "max-norm",
                            normalize: Bool = true,
                            warn: Bool = true )
     -> [Dictionary<String, Double>.Element] {
         let itemsd =  Dictionary(uniqueKeysWithValues: zip(items, [Double](repeating: 1.0, count: items.count)))
-        return recommend(items: itemsd, nrecs: nrecs, normalize: normalize, warn: warn)
+        return recommend(items: itemsd,
+                         nrecs: nrecs,
+                         normSpec: normSpec,
+                         normalize: normalize,
+                         warn: warn)
     }
     
     
     public func recommend( items: [String : Double],
                            nrecs: Int = 10,
+                           normSpec: String = "max-norm",
                            normalize: Bool = true,
                            warn: Bool = true )
     -> [Dictionary<String, Double>.Element] {
@@ -95,6 +102,7 @@ class CompositeSBR: AbstractSBR {
         
         return recommendByProfile(prof: Dictionary(uniqueKeysWithValues: res),
                                   nrecs: nrecs,
+                                  normSpec: normSpec,
                                   normalize: normalize,
                                   warn: warn)
     }
@@ -111,10 +119,15 @@ class CompositeSBR: AbstractSBR {
     public func recommendByProfile( prof: [String],
                                     nrecs: Int = 10,
                                     normSpec: String = "none",
+                                    normalize: Bool = true,
                                     warn: Bool = true )
     -> [Dictionary<String, Double>.Element] {
         let profd =  Dictionary(uniqueKeysWithValues: zip(prof, [Double](repeating: 1.0, count: prof.count)))
-        return recommendByProfile(prof: profd, nrecs: nrecs, normSpec: normSpec, warn: warn)
+        return recommendByProfile(prof: profd,
+                                  nrecs: nrecs,
+                                  normSpec: normSpec,
+                                  normalize: normalize,
+                                  warn: warn)
     }
     
     /// Recommend items for a consumption profile (that is a list or a mix of tags.)
