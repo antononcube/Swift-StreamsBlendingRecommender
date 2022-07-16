@@ -18,7 +18,7 @@ public func Norm(_ mix: [String : Double], _ spec: String = "euclidean") -> Doub
 public func Norm(_ vec: [Double], _ spec: String = "euclidean") -> Double {
     
     switch spec {
-
+        
     case let x where Set(["max-norm", "inf-norm", "inf", "infinity"]).contains(x):
         
         return (vec.map { abs($0) }).max()!

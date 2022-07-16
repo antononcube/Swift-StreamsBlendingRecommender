@@ -189,27 +189,24 @@ class LSATopicSBR: CoreSBR {
     /// - Parameters:
     ///    - text: Text.
     ///    - sep: Text splitting argument of split: a string, a regex, or a list of strings or regexes.
-    ///    - normalize: Should the recommendation scores be normalized or not?
+    ///    - normSpec: Norm specification; one of ["none", "inf-norm", "one-norm", "euclidean"]
     ///    - warn: Should warnings be issued or not?
     /// - Returns: A dictionary of weighted topics.
     public func representByTopics(_ text: String,
                                   _ nrecs: Int = 12,
                                   sep: Character = " ",
-                                  normalize: Bool = true,
+                                  normSpec: String = "max-norm",
                                   warn : Bool = true ) -> [String : Double] {
         
         //Get representation by terms
         let bag = self.representByTerms(text, sep: sep)
         
         //Recommend by profile
-        var res = Dictionary(uniqueKeysWithValues: self.recommendByProfile(prof: bag, nrecs: nrecs, normalize: normalize, warn: warn))
+        var res = Dictionary(uniqueKeysWithValues: self.recommendByProfile(prof: bag, nrecs: nrecs, warn: warn))
         
         //Normalize
-        if normalize {
-            res = Normalize(res, "max-norm")
-        } else {
-            res = Normalize(res, "euclidean")
-        }
+        res = Normalize(res, normSpec)
+        
         
         // Result
         return res
@@ -222,16 +219,16 @@ class LSATopicSBR: CoreSBR {
     /// - Parameters:
     ///    - text: Text.
     ///    - sep: Text splitting argument of split: a string, a regex, or a list of strings or regexes.
-    ///    - normalize: Should the recommendation scores be normalized or not?
+    ///    - normSpec: Norm specification; one of ["none", "inf-norm", "one-norm", "euclidean"]
     ///    - warn: Should warnings be issued or not?
     /// - Returns: A dictionary of weighted topics.
     public func recommendByText(_ text: String,
                                 _ nrecs: Int = 12,
                                 sep: Character = " ",
-                                normalize: Bool = true,
+                                normSpec: String = "max-norm",
                                 warn : Bool = true ) -> [String : Double] {
         
-        let res = self.representByTopics(text, nrecs, sep: sep, normalize: normalize, warn: warn)
+        let res = self.representByTopics(text, nrecs, sep: sep, normSpec: normSpec, warn: warn)
         
         return res.filter({ $0.value > 0 })
     }

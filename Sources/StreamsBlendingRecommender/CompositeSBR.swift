@@ -17,6 +17,8 @@ class CompositeSBR: AbstractSBR {
     
     var weights: [String : Double] = [:]
     
+    var compositeNormSpec : String = "max-norm"
+    
     //========================================================
     // Fill in weights
     //========================================================
@@ -68,42 +70,46 @@ class CompositeSBR: AbstractSBR {
     //========================================================
     // This repeated code of CoreSBR. It can be in an abstract class
     // but I prefer CoreSBR to be more self-contained.
+    
     /// Recommend items for a consumption history.
     ///  - Parameters:
-    ///    - items: A  list of items or an item-to-weight dictionary.
+    ///    - items: A  list of items.
     ///    - nrecs: Number of recommendations.
-    ///    - normalize: Should the recommendation scores be normalized or not?
+    ///    - normSpec: Norm specification; one of ["none", "inf-norm", "one-norm", "euclidean"]
     ///    - warn: Should warnings be issued or not?
     /// - Returns: An array of dictionary elements (items) sorted in descending order.
     public func recommend( items: [String],
                            nrecs: Int = 10,
                            normSpec: String = "max-norm",
-                           normalize: Bool = true,
                            warn: Bool = true )
     -> [Dictionary<String, Double>.Element] {
         let itemsd =  Dictionary(uniqueKeysWithValues: zip(items, [Double](repeating: 1.0, count: items.count)))
         return recommend(items: itemsd,
                          nrecs: nrecs,
                          normSpec: normSpec,
-                         normalize: normalize,
                          warn: warn)
     }
     
     
+    /// Recommend items for a consumption history.
+    ///  - Parameters:
+    ///    - items: An item-to-weight dictionary.
+    ///    - nrecs: Number of recommendations.
+    ///    - normSpec: Norm specification; one of ["none", "inf-norm", "one-norm", "euclidean"]
+    ///    - warn: Should warnings be issued or not?
+    /// - Returns: An array of dictionary elements (items) sorted in descending order.
     public func recommend( items: [String : Double],
                            nrecs: Int = 10,
                            normSpec: String = "max-norm",
-                           normalize: Bool = true,
                            warn: Bool = true )
     -> [Dictionary<String, Double>.Element] {
         
         // It is not fast, but it is just easy to compute the profile and call recommendByProfile.
-        let res = profile(items: items, normalize: normalize, warn: warn)
+        let res = profile(items: items, normalize: true, warn: warn)
         
         return recommendByProfile(prof: Dictionary(uniqueKeysWithValues: res),
                                   nrecs: nrecs,
                                   normSpec: normSpec,
-                                  normalize: normalize,
                                   warn: warn)
     }
     
@@ -114,19 +120,17 @@ class CompositeSBR: AbstractSBR {
     /// - Parameters:
     ///    - prof: A list or a mix of tags.
     ///    - nrecs: Number of recommendations.
-    ///    - normalize: Should the recommendation scores be normalized or not?
+    ///    - normSpec: Norm specification; one of ["none", "inf-norm", "one-norm", "euclidean"]
     ///    - warn: Should warnings be issued or not?
     public func recommendByProfile( prof: [String],
                                     nrecs: Int = 10,
                                     normSpec: String = "none",
-                                    normalize: Bool = true,
                                     warn: Bool = true )
     -> [Dictionary<String, Double>.Element] {
         let profd =  Dictionary(uniqueKeysWithValues: zip(prof, [Double](repeating: 1.0, count: prof.count)))
         return recommendByProfile(prof: profd,
                                   nrecs: nrecs,
                                   normSpec: normSpec,
-                                  normalize: normalize,
                                   warn: warn)
     }
     
@@ -134,13 +138,12 @@ class CompositeSBR: AbstractSBR {
     /// - Parameters:
     ///    - prof: A list or a mix of tags.
     ///    - nrecs: Number of recommendations.
-    ///    - normalize: Should the recommendation scores be normalized or not?
+    ///    - normSpec: Norm specification; one of ["none", "inf-norm", "one-norm", "euclidean"]
     ///    - warn: Should warnings be issued or not?
     /// - Returns: An array of dictionary elements (items) sorted in descending order.
     public func recommendByProfile( prof: [String : Double],
                                     nrecs: Int = 10,
                                     normSpec: String = "none",
-                                    normalize: Bool = true,
                                     warn: Bool = true )
     -> [Dictionary<String, Double>.Element] {
         
@@ -154,7 +157,6 @@ class CompositeSBR: AbstractSBR {
             Dictionary(uniqueKeysWithValues: $0.recommendByProfile(prof: prof,
                                                                    nrecs: nrecs,
                                                                    normSpec: normSpec,
-                                                                   normalize: false,
                                                                    warn: false))
         })
         
@@ -171,9 +173,7 @@ class CompositeSBR: AbstractSBR {
         }
         
         // Normalize
-        if normalize {
-            resMix = Normalize(resMix, "max-norm")
-        }
+        resMix = Normalize(resMix, self.compositeNormSpec)
         
         // Convert to list of pairs and reverse sort
         let res = resMix.sorted(by: { (e1, e2) in e1.value > e2.value })

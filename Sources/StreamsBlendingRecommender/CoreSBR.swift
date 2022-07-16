@@ -280,32 +280,30 @@ public class CoreSBR: AbstractSBR {
     ///  - Parameters:
     ///    - items: A  list of items or an item-to-weight dictionary.
     ///    - nrecs: Number of recommendations.
-    ///    - normalize: Should the recommendation scores be normalized or not?
+    ///    - normSpec: Norm specification; one of ["none", "inf-norm", "one-norm", "euclidean"]
     ///    - warn: Should warnings be issued or not?
     /// - Returns: An array of dictionary elements (items) sorted in descending order.
     public func recommend( items: [String],
                            nrecs: Int = 10,
                            normSpec: String = "max-norm",
-                           normalize: Bool = true,
                            warn: Bool = true )
     -> [Dictionary<String, Double>.Element] {
         let itemsd =  Dictionary(uniqueKeysWithValues: zip(items, [Double](repeating: 1.0, count: items.count)))
-        return recommend(items: itemsd, nrecs: nrecs, normSpec: normSpec, normalize: normalize, warn: warn)
+        return recommend(items: itemsd, nrecs: nrecs, normSpec: normSpec, warn: warn)
     }
     
     
     public func recommend( items: [String : Double],
                            nrecs: Int = 10,
                            normSpec: String = "max-norm",
-                           normalize: Bool = true,
                            warn: Bool = true )
     -> [Dictionary<String, Double>.Element] {
         
-        let res = profile(items: items, normalize: normalize, warn: warn)
+        let res = profile(items: items, normalize: true, warn: warn)
         
         return recommendByProfile(prof: Dictionary(uniqueKeysWithValues: res),
                                   nrecs: nrecs,
-                                  normalize: normalize,
+                                  normSpec: normSpec,
                                   warn: warn)
     }
     
@@ -316,29 +314,27 @@ public class CoreSBR: AbstractSBR {
     /// - Parameters:
     ///    - prof: A list or a mix of tags.
     ///    - nrecs: Number of recommendations.
-    ///    - normalize: Should the recommendation scores be normalized or not?
+    ///    - normSpec: Norm specification; one of ["none", "inf-norm", "one-norm", "euclidean"]
     ///    - warn: Should warnings be issued or not?
     public func recommendByProfile(prof: [String],
                                    nrecs: Int = 10,
                                    normSpec: String = "max-norm",
-                                   normalize: Bool = true,
                                    warn: Bool = true )
     -> [Dictionary<String, Double>.Element] {
         let profd =  Dictionary(uniqueKeysWithValues: zip(prof, [Double](repeating: 1.0, count: prof.count)))
-        return recommendByProfile(prof: profd, nrecs: nrecs, normSpec: normSpec, normalize: normalize, warn: warn)
+        return recommendByProfile(prof: profd, nrecs: nrecs, normSpec: normSpec, warn: warn)
     }
      
     /// Recommend items for a consumption profile (that is a list or a mix of tags.)
     /// - Parameters:
     ///    - prof: A list or a mix of tags.
     ///    - nrecs: Number of recommendations.
-    ///    - normalize: Should the recommendation scores be normalized or not?
+    ///    - normSpec: Norm specification; one of ["none", "inf-norm", "one-norm", "euclidean"]
     ///    - warn: Should warnings be issued or not?
     /// - Returns: An array of dictionary elements (items) sorted in descending order.
     public func recommendByProfile( prof: [String : Double],
                                     nrecs: Int = 10,
                                     normSpec: String = "max-norm",
-                                    normalize: Bool = true,
                                     warn: Bool = true )
     -> [Dictionary<String, Double>.Element] {
         
@@ -375,7 +371,7 @@ public class CoreSBR: AbstractSBR {
         // I am not happy with the function having the name "Normalize"
         // and the argument named "normalize". Using "normalizQ" (as I do, say, in R)
         // does not seem consistent.
-        if normalize {
+        if normSpec != "none" {
             itemMix = Normalize(itemMix, normSpec)
         }
 

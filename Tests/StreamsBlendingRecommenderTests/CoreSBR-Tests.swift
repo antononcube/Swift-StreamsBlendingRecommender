@@ -78,7 +78,7 @@ final class StreamsBlendingRecommenderTests: XCTestCase {
         
         let prof = ["ApplicationArea:Aviation", "DataType:TimeSeries"]
         
-        let lsRecs: [Dictionary<String, Double>.Element] = sbr.recommendByProfile(prof: prof, nrecs: 10, normalize: true)
+        let lsRecs: [Dictionary<String, Double>.Element] = sbr.recommendByProfile(prof: prof, nrecs: 10, normSpec: "max-norm")
         // print(lsRecs)
         
         let aRecs: [String : Double] = Dictionary(uniqueKeysWithValues: lsRecs)
