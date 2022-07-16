@@ -1,6 +1,5 @@
 import XCTest
 @testable import StreamsBlendingRecommender
-//@testable import CoreSBR
 //@testable import LSATopicSBR
 
 final class LSATopicSBRTests: XCTestCase {
