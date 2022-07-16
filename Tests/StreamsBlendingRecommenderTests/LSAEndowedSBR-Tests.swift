@@ -66,7 +66,7 @@ final class LSAEndowedSBRTests: XCTestCase {
         let query = "airline time series"
 
         let qbag = sbrWLExampleData.recommendByProfile(prof: prof, text:query, nrecs: 10)
-        print(qbag)
+  
         XCTAssertTrue(qbag.count >= 3)
         XCTAssertTrue(qbag[0].key == "Statistics-InternationalAirlinePassengers")
 
