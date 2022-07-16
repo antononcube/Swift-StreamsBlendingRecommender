@@ -40,6 +40,7 @@ public class CoreSBR {
     ///    - weightColumnName: The weights column name.
     ///    - make: Should the inverse indexes be made or not?
     ///    - sep: Separator of CSV fields.
+    /// - Returns: Boolean, true if success.
     public func ingestSMRMatrixCSVFile(fileName: String,
                                        itemColumnName: String = "Item",
                                        tagTypeColumnName: String = "TagType",
@@ -73,6 +74,7 @@ public class CoreSBR {
     // Make tag inverse indexes
     //========================================================
     /// Make the inverse indexes that correspond to the SMR matrix.
+    /// - Returns: Boolean, true if success.
     public func makeTagInverseIndexes() -> Bool {
         
         // Split into a hash by tag type.
@@ -117,11 +119,10 @@ public class CoreSBR {
     //========================================================
     // Transpose tag inverse indexes
     //========================================================
-    /**
-     * Transpose the tag inverse indexes into item inverse indexes.
-     * This operation corresponds to changing the representation of sparse matrix
-     * from column major to row major format.
-     */
+    /// - Description: Transpose the tag inverse indexes into item inverse indexes.
+    ///                This operation corresponds to changing the representation of sparse matrix
+    ///                from column major to row major format.
+    /// - Returns: Boolean, true if success.
     public func transposeTagInverseIndexes() -> Bool {
 
         // Transpose tag inverse indexes into item inverse indexes.
@@ -157,10 +158,10 @@ public class CoreSBR {
     ///   - addTagTypesToColumnNames: Should the tag types be prefixes of the tags or not?
     ///   - sep: Separator between the tag type prefixes and the tags.
     func makeTagInverseIndexesFromWideForm(data: [[String:String]],
-                       tagTypes: [String],
-                       itemColumnName: String,
-                       addTagTypesToColumnNames: Bool = false,
-                       sep: String = ":") {
+                                           tagTypes: [String],
+                                           itemColumnName: String,
+                                           addTagTypesToColumnNames: Bool = false,
+                                           sep: String = ":") {
         
 //        var tagTypesLocal = tagTypes
 //
@@ -197,6 +198,7 @@ public class CoreSBR {
     ///    - items: A  list of items or an item-to-weight dictionary.
     ///    - normalize: Should the recommendation scores be normalized or not?
     ///    - warn: Should warnings be issued or not?
+    /// - Returns: An array of dictionary elements (tags) sorted in descending order.
     public func profile( items: [String],
                          normalize: Bool = true,
                          warn: Bool = true )
@@ -210,6 +212,7 @@ public class CoreSBR {
     ///    - items: A  list of items or an item-to-weight dictionary.
     ///    - normalize: Should the recommendation scores be normalized or not?
     ///    - warn: Should warnings be issued or not?
+    /// - Returns: An array of dictionary elements (tags) sorted in descending order.
     public func profile( items: [String : Double],
                          normalize: Bool = true,
                          warn: Bool = true )
@@ -279,6 +282,7 @@ public class CoreSBR {
     ///    - nrecs: Number of recommendations.
     ///    - normalize: Should the recommendation scores be normalized or not?
     ///    - warn: Should warnings be issued or not?
+    /// - Returns: An array of dictionary elements (items) sorted in descending order.
     public func recommend( items: [String],
                            nrecs: Int = 10,
                            normalize: Bool = true,
@@ -312,10 +316,10 @@ public class CoreSBR {
     ///    - nrecs: Number of recommendations.
     ///    - normalize: Should the recommendation scores be normalized or not?
     ///    - warn: Should warnings be issued or not?
-    public func recommendByProfile( prof: [String],
-                                    nrecs: Int = 10,
-                                    normalize: Bool = true,
-                                    warn: Bool = true )
+    public func recommendByProfile(prof: [String],
+                                   nrecs: Int = 10,
+                                   normalize: Bool = true,
+                                   warn: Bool = true )
     -> [Dictionary<String, Double>.Element] {
         let profd =  Dictionary(uniqueKeysWithValues: zip(prof, [Double](repeating: 1.0, count: prof.count)))
         return recommendByProfile(prof: profd, nrecs: nrecs, normalize: normalize, warn: warn)
@@ -327,6 +331,7 @@ public class CoreSBR {
     ///    - nrecs: Number of recommendations.
     ///    - normalize: Should the recommendation scores be normalized or not?
     ///    - warn: Should warnings be issued or not?
+    /// - Returns: An array of dictionary elements (items) sorted in descending order.
     public func recommendByProfile( prof: [String : Double],
                                     nrecs: Int = 10,
                                     normalize: Bool = true,
@@ -385,6 +390,7 @@ public class CoreSBR {
     ///   - prof: A profile specification used to filter with.
     ///   - type: The type of filtering one of "union" or "intersection".
     ///   - warn: Should warnings be issued or not?
+    /// - Returns: An array items.
     public func filterByProfile( prof : [String],
                                  type : String = "intersection",
                                  warn : Bool = true) -> [String] {
@@ -426,6 +432,7 @@ public class CoreSBR {
     ///   - mustType: The type of filtering with the must tags; one of "union" or "intersection".
     ///   - mustNotType: The type of filtering with the must not tags; one of "union" or "intersection".
     ///   - warn: Should warnings be issued or not?
+    /// - Returns: An array of dictionary elements (items) sorted in descending order.
     public func retrieveByQueryElements( should : [String],
                                          must : [String],
                                          mustNot : [String],
