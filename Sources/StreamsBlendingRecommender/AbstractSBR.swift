@@ -27,6 +27,7 @@ protocol AbstractSBR {
     //========================================================
     func recommend( items: [String],
                     nrecs: Int,
+                    normSpec: String,
                     normalize: Bool,
                     warn: Bool )
     -> [Dictionary<String, Double>.Element]
@@ -34,6 +35,7 @@ protocol AbstractSBR {
     
     func recommend( items: [String : Double],
                     nrecs: Int,
+                    normSpec: String,
                     normalize: Bool,
                     warn: Bool )
     -> [Dictionary<String, Double>.Element]
@@ -44,6 +46,7 @@ protocol AbstractSBR {
     func recommendByProfile( prof: [String],
                              nrecs: Int,
                              normSpec: String,
+                             normalize: Bool,
                              warn: Bool )
     -> [Dictionary<String, Double>.Element]
     
