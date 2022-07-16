@@ -32,7 +32,7 @@ public func IngestCSVFile( fileName: String,
 
         
         //Check that the file had expected column names
-        if Set(mapper.keys).intersection(rowsOrig[0].keys).count < mapper.count {
+        if Set(mapper.values).intersection(rowsOrig[0].keys).count < mapper.count {
             print("The ingested CSV file does not have the expected column names: \(mapper.keys).")
             return []
         }
