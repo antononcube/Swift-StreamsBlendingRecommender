@@ -158,7 +158,8 @@ class LSATopicSBR: CoreSBR {
     /// Represent text by terms.
     /// - Parameters:
     ///    - text: Text.
-    ///    - splitPattern: Text splitting argument of split: a string, a regex, or a list of strings or regexes.
+    ///    - sep: Text splitting argument of split: a string, a regex, or a list of strings or regexes.
+    /// - Returns: A dictionary of weighted )terms.
     public func representByTerms(_ text: String, sep: Character = " ") -> [String : Double] {
         
         //Split into words
@@ -179,5 +180,59 @@ class LSATopicSBR: CoreSBR {
         bag = Normalize(bag)
         
         return bag
+    }
+    
+    //========================================================
+    // Represent by topics
+    //========================================================
+    /// Represent a text query by topics.
+    /// - Parameters:
+    ///    - text: Text.
+    ///    - sep: Text splitting argument of split: a string, a regex, or a list of strings or regexes.
+    ///    - normalize: Should the recommendation scores be normalized or not?
+    ///    - warn: Should warnings be issued or not?
+    /// - Returns: A dictionary of weighted topics.
+    public func representByTopics(_ text: String,
+                                  _ nrecs: Int = 12,
+                                  sep: Character = " ",
+                                  normalize: Bool = true,
+                                  warn : Bool = true ) -> [String : Double] {
+        
+        //Get representation by terms
+        let bag = self.representByTerms(text, sep: sep)
+        
+        //Recommend by profile
+        var res = Dictionary(uniqueKeysWithValues: self.recommendByProfile(prof: bag, nrecs: nrecs, normalize: normalize, warn: warn))
+        
+        //Normalize
+        if normalize {
+            res = Normalize(res, "max-norm")
+        } else {
+            res = Normalize(res, "euclidean")
+        }
+        
+        // Result
+        return res
+    }
+    
+    //========================================================
+    // Recommend by free text
+    //========================================================
+    /// Recommend topics for a text query.
+    /// - Parameters:
+    ///    - text: Text.
+    ///    - sep: Text splitting argument of split: a string, a regex, or a list of strings or regexes.
+    ///    - normalize: Should the recommendation scores be normalized or not?
+    ///    - warn: Should warnings be issued or not?
+    /// - Returns: A dictionary of weighted topics.
+    public func recommendByText(_ text: String,
+                                _ nrecs: Int = 12,
+                                sep: Character = " ",
+                                normalize: Bool = true,
+                                warn : Bool = true ) -> [String : Double] {
+        
+        let res = self.representByTopics(text, nrecs, sep: sep, normalize: normalize, warn: warn)
+        
+        return res.filter({ $0.value > 0 })
     }
 }
