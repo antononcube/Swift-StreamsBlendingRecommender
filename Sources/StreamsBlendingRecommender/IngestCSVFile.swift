@@ -57,7 +57,7 @@ public func IngestCSVFile( fileName: String,
             
             var rec2 : [String : String] = [:]
             
-            for (k, v) in rec2 {
+            for (k, v) in rec {
                 if mapperInv[k] != nil {
                     rec2[mapperInv[k]!] = v
                 } else {
