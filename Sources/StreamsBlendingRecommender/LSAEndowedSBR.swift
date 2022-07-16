@@ -8,7 +8,7 @@
 import Foundation
 
 class LSAEndowedSBR: AbstractSBR {
-
+    
     
     //========================================================
     // Recommender objects
@@ -19,11 +19,11 @@ class LSAEndowedSBR: AbstractSBR {
     //========================================================
     // Initializer
     //========================================================
-    init(coreObj : CoreSBR, lsaObj : LSATopicSBR) {
+    init(coreObj: CoreSBR, lsaObj: LSATopicSBR) {
         self.Core = coreObj
         self.LSA = lsaObj
     }
-
+    
     //========================================================
     // Protocol adherences
     //========================================================
@@ -42,7 +42,7 @@ class LSAEndowedSBR: AbstractSBR {
     func recommend(items: [String : Double], nrecs: Int, normSpec: String, normalize: Bool, warn: Bool) -> [Dictionary<String, Double>.Element] {
         return self.Core.recommend(items: items, normalize: normalize, warn: warn)
     }
-        
+    
     
     //========================================================
     // Recommend by profile delegation
@@ -99,7 +99,7 @@ class LSAEndowedSBR: AbstractSBR {
                                     normalize: Bool = true,
                                     warn: Bool = true )
     -> [Dictionary<String, Double>.Element] {
-        let profd =  Dictionary(uniqueKeysWithValues: zip(prof, [Double](repeating: 1.0, count: prof.count)))
+        let profd = Dictionary(uniqueKeysWithValues: zip(prof, [Double](repeating: 1.0, count: prof.count)))
         return recommendByProfile(prof: profd,
                                   text: text,
                                   nrecs: nrecs,
@@ -123,7 +123,44 @@ class LSAEndowedSBR: AbstractSBR {
                                     normalize: Bool = true,
                                     warn: Bool = true )
     -> [Dictionary<String, Double>.Element] {
-        return []
+        
+        // Check
+        if prof.count == 0 && text.count == 0 {
+            print("Empty profile and text.")
+            return []
+        }
+        
+        // Make profile corresponding to the text
+        var textProf : [String : Double] = [:]
+
+        if text.count > 0 {
+            
+            // Represent by terms
+            var textWordsProf : [String : Double ] = self.LSA.representByTerms(text)
+            
+            // Represent by topics
+            var textTopicsProf : [String : Double ] = self.LSA.representByTerms(text)
+
+            // Appropriate verifications have to be made for concatenating with 'Word:' and 'Topic:'.
+            textWordsProf = Dictionary(uniqueKeysWithValues: zip(textWordsProf.keys.map({ "Word:" + $0 }), textWordsProf.values))
+            textTopicsProf = Dictionary(uniqueKeysWithValues: zip(textTopicsProf.keys.map({ "Topic:" + $0 }), textTopicsProf.values))
+
+            // Normalize each profile
+            textWordsProf = Normalize(textWordsProf, normSpec)
+            textTopicsProf = Normalize(textTopicsProf, normSpec)
+            
+            
+            // Make the words-and-topics profile
+            textProf = textWordsProf.merging(textTopicsProf, uniquingKeysWith: { (_, new) in new })
+        }
+        
+        // Make the combined profile.
+        // Note, the additional normalization arguments have to be surfaced to the signature.
+        let profCombined: [String : Double] =
+        prof.count > 0 ? Normalize( prof.merging(textProf, uniquingKeysWith: {(_, new) in new}), normSpec) : textProf
+        
+        // Get recommendations
+        return self.Core.recommendByProfile(prof: profCombined, nrecs: nrecs, normSpec: normSpec, normalize: normalize, warn: warn)
     }
     
 }
