@@ -58,7 +58,7 @@ public class CoreSBR: AbstractSBR {
             self.tagInverseIndexes = jsonData
             
         } catch {
-            print("Cannot ingest JSON ingest file.")
+            print("Cannot ingest JSON file.")
             return false
         }
         
