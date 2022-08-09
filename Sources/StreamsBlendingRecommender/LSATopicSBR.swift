@@ -17,6 +17,29 @@ class LSATopicSBR: CoreSBR {
     var stemRules: [String: String] = [:]
     
     
+    //========================================================
+    // Ingest LSA matrix JSON file
+    //========================================================
+    /// Ingest LSA matrix JSON file. (Tag-to-item-weight.)
+    /// - Parameters:
+    ///    - fileName: JSON file name.
+    ///    - tagTypesFromTagPrefixes: Should the tag-type-to-tag associations be derived from tag prefiexes or not?
+    ///    - sep: Separator between tag prefix adn tag.
+    public func ingestLSAMatrixJSONFile(fileName: String,
+                                        tagTypesFromTagPrefixes: Bool = false,
+                                        sep: Character = ":") -> Bool {
+        
+        let res: Bool = self.ingestSMRMatrixJSONFile(fileName: fileName, tagTypesFromTagPrefixes: false, sep: sep)
+        
+        if !res {
+            return false
+        }
+        
+        self.tagTypeToTags = ["Topic" : Set(self.tagInverseIndexes.keys)]
+        
+        return true
+    }
+    
     
     //========================================================
     // Ingest a LSA matrix CSV file
@@ -108,9 +131,25 @@ class LSATopicSBR: CoreSBR {
     }
     
     //========================================================
+    // Ingest stemming rules from JSON
+    //========================================================
+    /// Stemming rules JSON file ingestion.
+    /// - Parameters:
+    ///    - fileName: JSON file name.
+    public func ingestGlobalWeightsJSONFile(fileName: String) -> Bool {
+
+        let res : [String : Double] = IngestJSONDictionaryFile(fileName: fileName)
+        if res.isEmpty {
+            return false
+        }
+        self.globalWeights = res
+        return true
+    }
+    
+    //========================================================
     // Ingest stemming rules
     //========================================================
-    /// Global weights CSV file ingestion.
+    /// Stemming rules CSV file ingestion.
     /// - Parameters:
     ///    - fileName: CSV file name.
     ///    - wordColumnName: The words column name.
@@ -151,6 +190,21 @@ class LSATopicSBR: CoreSBR {
         }
     }
     
+    
+    //========================================================
+    // Ingest stemming rules from JSON
+    //========================================================
+    /// Stemming rules JSON file ingestion.
+    /// - Parameters:
+    ///    - fileName: JSON file name.
+    public func ingestStemRulesJSONFile(fileName: String) -> Bool {
+        let res : [String : String] = IngestJSONDictionaryFile(fileName: fileName)
+        if res.isEmpty {
+            return false
+        }
+        self.stemRules = res
+        return true
+    }
     
     //========================================================
     // Represent by terms
