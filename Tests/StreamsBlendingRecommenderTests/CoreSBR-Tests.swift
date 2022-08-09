@@ -34,6 +34,25 @@ final class StreamsBlendingRecommenderTests: XCTestCase {
         XCTAssertTrue(sbr.SMRMatrix.count > 3000)
     }
     
+    func testJSONIngestion() throws {
+        
+        let urlSMRMatrixJSON = Bundle.module.url(forResource: "WLExampleData-SMRMatrixColumnDictionaries", withExtension: "json")
+        
+        let sbr: CoreSBR = CoreSBR()
+        
+        let fname: String = (urlSMRMatrixJSON?.absoluteString)!.replacingOccurrences(of: "file://", with: "");
+        
+        let res: Bool = sbr.ingestSMRMatrixJSONFile(fileName: fname, tagTypesFromTagPrefixes: true, sep: ":" )
+        
+        XCTAssertTrue(res)
+        
+        XCTAssertTrue(sbr.tagInverseIndexes.count > 1000)
+ 
+        // Expected tag types
+        // {"ApplicationArea", "ColumnHeading", "ColumnType", "DataType", "Name", "ColumnsCount", "RowsCount", "ObservationCount", "Word", "Topic"}
+        XCTAssertTrue(sbr.tagTypeToTags.count >= 9)
+    }
+    
     func testNorms() throws {
         
         XCTAssertTrue(abs(Norm([1, 212, 21, 2, 5]) - 213.1079538637636) < 0.00001 )
@@ -106,4 +125,30 @@ final class StreamsBlendingRecommenderTests: XCTestCase {
         XCTAssertTrue( Set(["Statistics-KidneyInfection", "Statistics-KidneyTransplant"]).intersection(Dictionary(uniqueKeysWithValues: res).keys).count == 1)
     }
     
+    func testRecommendByProfileFromJSON() throws {
+        let urlSMRMatrixJSON = Bundle.module.url(forResource: "WLExampleData-SMRMatrixColumnDictionaries", withExtension: "json")
+        
+        let sbr: CoreSBR = CoreSBR()
+        
+        let fname: String = (urlSMRMatrixJSON?.absoluteString)!.replacingOccurrences(of: "file://", with: "");
+        
+        _ = sbr.ingestSMRMatrixJSONFile(fileName: fname, tagTypesFromTagPrefixes: true, sep: ":" )
+        
+        _ = sbr.transposeTagInverseIndexes()
+        
+        // Same as the profile recommendation code in testRecommendByProfile()
+        
+        let prof = ["ApplicationArea:Aviation", "DataType:TimeSeries"]
+        
+        let lsRecs: [Dictionary<String, Double>.Element] = sbr.recommendByProfile(prof: prof, nrecs: 10, normSpec: "max-norm")
+        
+        let aRecs: [String : Double] = Dictionary(uniqueKeysWithValues: lsRecs)
+        
+        XCTAssertTrue( aRecs["Statistics-AirlinePassengerMiles"] != nil )
+        XCTAssertTrue( abs(aRecs["Statistics-AirlinePassengerMiles"]! - 1.00) < 1.0e-10 )
+        
+        XCTAssertTrue( aRecs["Statistics-InternationalAirlinePassengers"] != nil )
+        XCTAssertTrue( abs(aRecs["Statistics-InternationalAirlinePassengers"]! - 1.00) < 1.0e-10 )
+        
+    }
 }
