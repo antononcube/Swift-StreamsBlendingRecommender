@@ -4,6 +4,8 @@
 //
 //  Created by Anton Antonov on 7/1/22.
 //
+import Foundation
+
 public class CoreSBR: AbstractSBR {
     
     //========================================================
@@ -11,7 +13,7 @@ public class CoreSBR: AbstractSBR {
     //========================================================
     var SMRMatrix: [[String: String]] = [[String: String]]()
     var itemInverseIndexes: [String : [String : Double]] = [String : [String : Double]]()
-    var tagInverseIndexes: [String : [String : Double]] = [String : [String : Double]]()
+    public var tagInverseIndexes: [String : [String : Double]] = [String : [String : Double]]()
     var tagTypeToTags: [String : Set<String> ] = [String : Set<String> ]();
     var globalWeights: [String: Double] = [:]
     var knownTags: Set<String> = Set<String>()
@@ -27,6 +29,73 @@ public class CoreSBR: AbstractSBR {
     //========================================================
     // Setters ?
     //========================================================
+    
+    //========================================================
+    // Ingest from JSON file
+    //========================================================
+    /// Ingest SMR matrix JSON file. (Tag-to-item-weight.)
+    /// - Parameters:
+    ///    - fileName: JSON file name.
+    ///    - tagTypesFromTagPrefixes: Should the tag-type-to-tag associations be derived from tag prefiexes or not?
+    ///    - sep: Separator between tag prefix adn tag.
+    public func ingestSMRMatrixJSONFile(fileName: String,
+                                        tagTypesFromTagPrefixes: Bool = false,
+                                        sep: Character = ":") -> Bool {
+        
+        let fileManager = FileManager.default
+        
+        if !fileManager.fileExists(atPath: fileName) {
+            print("File does not exist: \(fileName).")
+            return false
+        }
+        
+        do {
+            
+            let data = try Data(contentsOf: URL(fileURLWithPath: fileName));
+            
+            let jsonData = try! JSONDecoder().decode([String : [String : Double]].self, from: data)
+            
+            self.tagInverseIndexes = jsonData
+            
+        } catch {
+            print("Cannot ingest JSON ingest file.")
+            return false
+        }
+        
+        // Derive the tag type to tags hash map.
+        if tagTypesFromTagPrefixes {
+            
+            var tagTypeToTagsLocal: [String:Set<String>] = [:]
+            
+            _ = self.tagInverseIndexes.keys.map { tag in
+                let s = Array(tag.split(separator: sep, maxSplits: 2))
+                if s.count >= 2 {
+                    let tagType = String(s[0])
+                    
+                    if tagTypeToTagsLocal[tagType] == nil {
+                        tagTypeToTagsLocal[tagType] = Set();
+                    }
+                    tagTypeToTagsLocal[tagType] = tagTypeToTagsLocal[tagType]!.union(Set([tag]))
+                } else {
+                    print("Cannot find tag type prefix in tag.")
+                }
+            }
+            
+            self.tagTypeToTags = tagTypeToTagsLocal
+        }
+        
+        // Assign known tags.
+        self.knownTags = Set(self.tagInverseIndexes.keys);
+        
+        // No SMR matrix
+        self.SMRMatrix = [[String: String]]()
+        
+        // We make sure item inverse indexes are empty.
+        self.itemInverseIndexes = [String: [String : Double]]();
+        
+        return true;
+        
+    }
     
     //========================================================
     // Ingest from CSV file
@@ -49,6 +118,13 @@ public class CoreSBR: AbstractSBR {
                                        make: Bool = false,
                                        sep: Character = ",") -> Bool {
         
+        let fileManager = FileManager.default
+        
+        if !fileManager.fileExists(atPath: fileName) {
+            print("File does not exist: \(fileName).")
+            return false
+        }
+        
         let res = IngestCSVFile(fileName : fileName,
                                 mapper : ["Item" : itemColumnName,
                                           "TagType" : tagTypeColumnName,
@@ -63,7 +139,7 @@ public class CoreSBR: AbstractSBR {
         self.itemInverseIndexes = [:]
         self.tagInverseIndexes = [:]
         
-        if make {    
+        if make {
             return self.makeTagInverseIndexes()
         }
         
@@ -79,15 +155,15 @@ public class CoreSBR: AbstractSBR {
         
         // Split into a hash by tag type.
         let inverseIndexGroups = Dictionary(grouping: self.SMRMatrix, by: { r in r["TagType"]! })
-
+        
         // For each tag type split into hash by Value.
         var inverseIndexesPerTagType: Dictionary<String, Dictionary<String, Array<[String : String]>>>
         inverseIndexesPerTagType = inverseIndexGroups.mapValues { it0 in Dictionary(grouping: it0, by: { $0["Value"]! }) }
-
+        
         // Re-make each array of hashes into a hash.
         // println( inverseIndexesPerTagType.mapValues{ typeRec -> typeRec.value.mapValues{ it.value.size } } )
-
-
+        
+        
         var inverseIndexesPerTagType2: Dictionary<String, Dictionary<String, Dictionary<String, Double>>>
         inverseIndexesPerTagType2 = inverseIndexesPerTagType.mapValues { typeRec in
             typeRec.mapValues { tagRec in
@@ -96,10 +172,10 @@ public class CoreSBR: AbstractSBR {
                     { Double($0["Weight"]!)! })
             }
         }
-
+        
         // Derive the tag type to tags hash map.
         self.tagTypeToTags = inverseIndexesPerTagType2.mapValues { it in Set(it.keys) }
-
+        
         
         // Flatten the inverse index groups.
         self.tagInverseIndexes = [String: [String : Double]]();
@@ -109,7 +185,7 @@ public class CoreSBR: AbstractSBR {
         
         // Assign known tags.
         self.knownTags = Set(self.tagInverseIndexes.keys);
-
+        
         // We make sure item inverse indexes are empty.
         self.itemInverseIndexes = [String: [String : Double]]();
         
@@ -124,26 +200,26 @@ public class CoreSBR: AbstractSBR {
     ///                from column major to row major format.
     /// - Returns: Boolean, true if success.
     public func transposeTagInverseIndexes() -> Bool {
-
+        
         // Transpose tag inverse indexes into item inverse indexes.
-
+        
         var items: Set<String> = Set<String>()
         for (_, v) in tagInverseIndexes {
             for (i, _) in v { items.insert(i) }
         }
         
         self.itemInverseIndexes = [String: [String : Double]]();
-
+        
         for i in items { self.itemInverseIndexes[i] = [:] }
         for (t, dt) in tagInverseIndexes {
             for (i, w) in dt {
                 self.itemInverseIndexes[i]!.merge([t : w]) { (current, _) in current }
             }
         }
-
+        
         // Assign known items.
         self.knownItems = Set(self.itemInverseIndexes.keys);
-
+        
         return true;
     }
     
@@ -163,31 +239,31 @@ public class CoreSBR: AbstractSBR {
                                            addTagTypesToColumnNames: Bool = false,
                                            sep: String = ":") {
         
-//        var tagTypesLocal = tagTypes
-//
-//        if tagTypesLocal.isEmpty {
-//            tagTypesLocal = data.columns.map { $0.name }
-//            tagTypesLocal = tagTypesLocal.filter({ $0 != itemColumnName })
-//        }
-//
-//        // Hash of mixes
-//        var matrices: [String : [[String : Double]]];
-//        for tagType in tagTypesLocal {
-//
-//            //Cross-tabulate tag-vs-item
-//            var res = crossTabulate(data, tagType, itemColumnName)
-//
-//            //If specified add the tag type to the tag-keys.
-//            if addTagTypesToColumnNames {
-//                //TBD...
-//            }
-//
-//            //Assign
-//            matrices[tagType] = res
-//        }
-//
-//        //Finish the tag inverse index making.
-//        return makeTagInverseIndexes(matrices)
+        //        var tagTypesLocal = tagTypes
+        //
+        //        if tagTypesLocal.isEmpty {
+        //            tagTypesLocal = data.columns.map { $0.name }
+        //            tagTypesLocal = tagTypesLocal.filter({ $0 != itemColumnName })
+        //        }
+        //
+        //        // Hash of mixes
+        //        var matrices: [String : [[String : Double]]];
+        //        for tagType in tagTypesLocal {
+        //
+        //            //Cross-tabulate tag-vs-item
+        //            var res = crossTabulate(data, tagType, itemColumnName)
+        //
+        //            //If specified add the tag type to the tag-keys.
+        //            if addTagTypesToColumnNames {
+        //                //TBD...
+        //            }
+        //
+        //            //Assign
+        //            matrices[tagType] = res
+        //        }
+        //
+        //        //Finish the tag inverse index making.
+        //        return makeTagInverseIndexes(matrices)
     }
     
     //========================================================
@@ -231,7 +307,7 @@ public class CoreSBR: AbstractSBR {
         
         // Make sure items are known
         let itemsQuery: [String : Double] = items.filter({ self.knownItems.contains($0.key) })
-
+        
         if itemsQuery.count == 0 && warn {
             print("None of the items is known in the recommender.")
             return []
@@ -246,7 +322,7 @@ public class CoreSBR: AbstractSBR {
         
         // Get the item inverse indexes and multiply their value by the corresponding item weight
         var weightedItemIndexes: [String : [String : Double] ] = [String: [String : Double]]();
-                
+        
         for k in keys2 {
             weightedItemIndexes[k] = (self.itemInverseIndexes[k]!).mapValues({ $0 * itemsQuery[k]! })
         }
@@ -265,7 +341,7 @@ public class CoreSBR: AbstractSBR {
         if normalize {
             tagMix = Normalize(tagMix, "max-norm")
         }
-
+        
         // Convert to list of pairs and reverse sort
         let res = tagMix.sorted(by: { e1, e2 in e1.value > e2.value })
         
@@ -324,7 +400,7 @@ public class CoreSBR: AbstractSBR {
         let profd =  Dictionary(uniqueKeysWithValues: zip(prof, [Double](repeating: 1.0, count: prof.count)))
         return recommendByProfile(prof: profd, nrecs: nrecs, normSpec: normSpec, warn: warn)
     }
-     
+    
     /// Recommend items for a consumption profile (that is a list or a mix of tags.)
     /// - Parameters:
     ///    - prof: A list or a mix of tags.
@@ -340,7 +416,7 @@ public class CoreSBR: AbstractSBR {
         
         // Make sure tags are known
         let profQuery: [String : Double] = prof.filter({ self.knownTags.contains($0.key) })
-
+        
         if profQuery.count == 0 && warn {
             print("None of the tags is known in the recommender.")
             return []
@@ -355,7 +431,7 @@ public class CoreSBR: AbstractSBR {
         
         // Get the tag inverse indexes and multiply their value by the corresponding item weight
         var weightedTagIndexes: [String : [String : Double] ] = [String: [String : Double]]();
-                
+        
         for k in keys2 {
             weightedTagIndexes[k] = (self.tagInverseIndexes[k]!).mapValues({ $0 * profQuery[k]! })
         }
@@ -374,10 +450,10 @@ public class CoreSBR: AbstractSBR {
         if normSpec != "none" {
             itemMix = Normalize(itemMix, normSpec)
         }
-
+        
         // Convert to list of pairs and reverse sort
         let res = itemMix.sorted(by: { e1, e2 in e1.value > e2.value })
-
+        
         // Result
         return (nrecs >= res.count) ? res : Array(res[0..<nrecs])
     }
@@ -401,15 +477,15 @@ public class CoreSBR: AbstractSBR {
         if type.lowercased() == "intersection" {
             
             let tagItemSets = self.tagInverseIndexes.filter({ profSet.contains($0.key) }).map({ Set($0.value.keys) })
-
+            
             profMix = tagItemSets.suffix(from:1).reduce(tagItemSets[0], { x, y in x.intersection(y) })
-                
+            
         } else if type.lowercased() == "union" {
             
             let tagItemSets = self.tagInverseIndexes.filter({ profSet.contains($0.key) }).map({ Set($0.value.keys) })
             
             profMix = tagItemSets.reduce(Set<String>(), { x, y in x.union(y) })
-        
+            
         } else {
             if warn {
                 print("The value of the type argument is expected to be one of \"intersection\" or \"union\".")
@@ -439,7 +515,7 @@ public class CoreSBR: AbstractSBR {
                                          mustType : String = "intersection",
                                          mustNotType : String = "union",
                                          warn: Bool = true) -> [Dictionary<String, Double>.Element] {
-    
+        
         if should.count + must.count + mustNot.count == 0 {
             if warn { print("All query specifications are empty.") }
             return [Dictionary<String, Double>.Element]()
@@ -454,7 +530,7 @@ public class CoreSBR: AbstractSBR {
             profRecs = Dictionary(uniqueKeysWithValues: recommendByProfile(prof: should + must, warn: warn))
             shouldItems = Set(profRecs.keys)
         }
-
+        
         var res: Set<String> = shouldItems
         
         //-------------------------------------------------
@@ -466,11 +542,11 @@ public class CoreSBR: AbstractSBR {
         } else {
             mustItems = self.knownItems
         }
-
+        
         if mustItems.count > 0 {
             res = res.intersection(mustItems)
         }
-
+        
         //-------------------------------------------------
         // Must Not
         //-------------------------------------------------
@@ -482,7 +558,7 @@ public class CoreSBR: AbstractSBR {
         if mustNotItems.count > 0 {
             res.subtract(mustNotItems)
         }
-
+        
         // Result
         return Array(profRecs.filter({ res.contains($0.key) })).sorted(by: { e1, e2 in e1.value > e2.value })
     }
