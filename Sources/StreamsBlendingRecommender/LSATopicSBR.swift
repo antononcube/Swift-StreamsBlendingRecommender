@@ -13,7 +13,6 @@ class LSATopicSBR: CoreSBR {
     //========================================================
     // Data members
     //========================================================
-    var lsaGlobalWeights: [String: Double] = [:]
     var stemRules: [String: String] = [:]
     
     
@@ -227,7 +226,7 @@ class LSATopicSBR: CoreSBR {
         
         //Apply global weight
         for (t, w) in bag {
-            bag[t] = w * self.lsaGlobalWeights[t, default: 1]
+            bag[t] = w * self.globalWeights[t, default: 1]
         }
         
         // Normalize
