@@ -113,7 +113,7 @@ final class LSATopicSBRTests: XCTestCase {
         XCTAssertTrue(qbag.count >= 3)
     }
 
-    func test_recommend_by_topics() throws {
+    func test_recommend_by_text() throws {
 
         let query = "titanic survival data records"
         
